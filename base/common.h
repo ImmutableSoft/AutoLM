@@ -29,8 +29,8 @@
 /* SOFTWARE.                                                           */
 /*                                                                     */
 /***********************************************************************/
-#ifndef _COMMON
-#define _COMMON
+#ifndef _AUTOLM_COMMON_H
+#define _AUTOLM_COMMON_H
  
 /***********************************************************************/
 /* Configuration                                                       */
@@ -62,5 +62,5 @@ typedef unsigned char  ui8;
 #define FREE(n) free(n)
 #endif /*__cplusplus*/
 
-#endif /*_COMMON*/
+#endif /*_AUTOLM_COMMON_H */
 

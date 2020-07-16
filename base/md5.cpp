@@ -57,8 +57,8 @@
 /***********************************************************************/
 /* Constants for mbxMd5Transform routine.                              */
 /***********************************************************************/
-#include "common.h"
-#include "md5.h"
+#include "base/common.h"
+#include "base/md5.h"
 #include <string.h>
 
 #define S11 7

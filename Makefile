@@ -10,8 +10,6 @@
 ##
 ##
 INSTROOT = /usr/lib
-#CURLCPPDIR = ../easylm/curlcpp
-CURLCPPDIR = ../curlpp
 
 ##
 ## Commands:
@@ -26,12 +24,12 @@ LINK = /bin/sh /usr/bin/libtool --mode=link c++
 ##
 ## Definitions:
 ##
-EXTRAS = -ggdb -O0 -D_MINGW -DWIN32 \
-         -DCURL_STATICLIB -DNGHTTP2_STATICLIB -D_OPENSSL
-#EXTRAS = -O3 -fexpensive-optimizations -D_MINGW -DWIN32 \
-         -DCURL_STATICLIB -DNGHTTP2_STATICLIB -D_OPENSSL
-CPPFLAGS = -Wall -fPIC $(EXTRAS)
-CFLAGS = -Wall -fPIC $(EXTRAS)
+# need -DCURL_STATICLIB for static build
+EXTRAS = -ggdb -O0 -DWIN32 -D_MINGW -D_WINDOWS
+#EXTRAS = -O3 -fexpensive-optimizations -DWIN32 
+
+CPPFLAGS = -Wall $(EXTRAS)
+CFLAGS = -Wall $(EXTRAS)
 INCLUDES = -I"." -I"./base" \
            -I$(CURLCPPDIR)/include
 
@@ -45,14 +43,20 @@ LIBAUTO = \
 	compid.o \
 	autolm.o
 
-CURLLIB = $(LIBCURLDIR)/lib/.libs/libcurl.a
-CURLCPPLIB = $(CURLCPPDIR)/build/libcurlpp.a
+# Replace -lcurl below with custom build
+CURLLIB = -lcurl
+
+# The name of library output file (static libautolm.a)
+#AUTOLIB = ./libautolm.a
 AUTOLIB = ./libautolm.so
 
-LDFLAGS = -fPIC -static
-LIBS = -lcurl -lssl -lcrypto -lbrotlidec -lbrotlicommon -lnghttp2 \
-       -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
-
+# Static build
+#LDFLAGS = -fPIC -static
+LDFLAGS = 
+LIBS = -lstdc++
+# These may be needed for static build, depending on curl install
+#LIBS = -lcurl -lssl -lcrypto -lbrotlidec -lbrotlicommon -lnghttp2 \
+#       -lpsl -lidn2 -liconv -lstdc++ -lIphlpapi -lz -lunistring
 
 ##
 ## Implicit Targets
@@ -73,15 +77,19 @@ LIBS = -lcurl -lssl -lcrypto -lbrotlidec -lbrotlicommon -lnghttp2 \
 
 all:		libauto
 
+# To create a static library change this below
+#	$(CPP) $(CPPFLAGS) -static \
+
 libauto: $(LIBAUTO)
 	$(CPP) $(CPPFLAGS) -shared \
                 -o $(AUTOLIB) \
-				-Wl,--whole-archive \
-				$(LIBAUTO) \
-				$(CURLCPPLIB) \
-				-Wl,--no-whole-archive \
-				-fPIC -shared \
-				$(LIBS)
+				$(LIBAUTO) $(CURLLIB) \
+				$(LDFLAGS) $(LIBS)
+
+# For libcurl static, remaning shared
+#				-Wl,--whole-archive \
+#				$(LIBAUTO) $(CURLLIB) \
+#				-Wl,--no-whole-archive \
 
 clean:
 	$(RM) *.o

@@ -50,8 +50,8 @@
 /*                                                                     */
 /***********************************************************************/
 #include <string.h>
-#include "sha1.h"
-#include "common.h"
+#include "base/sha1.h"
+#include "base/common.h"
 
 #ifdef __GNUC__
 #define HAVE64 1

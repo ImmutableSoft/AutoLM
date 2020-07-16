@@ -38,10 +38,7 @@
 #include <ctype.h>
 #include "autolm.h"
 
-// From compid.cpp
-extern int AutoLmMachineId(char *comp_id);
-
-#ifdef WIN32
+#ifdef _MINGW //WIN32
 #define SOCKET int  // avoid winsock2.h/socket.h
 #include "process.h"
 #endif
@@ -66,36 +63,6 @@ using curl::curl_ios;
 #pragma warning(disable : 4996) // if this is uncommented no need to use microsoft secure function calls like ended with _s eg. strcat_s
 #endif
 #endif
-
-//jsonData = data:{"jsonrpc":"2.0", "method" : "eth_call", "params" : [{"to": "0x2e65a1644bB762637cDa133Aa31248F7A8db8b40", "data" : "0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"}] , "id" : 8}
-//jsonData = data:{"jsonrpc":"2.0", "method" : "eth_call", "params" : [{"to": "0x2e65a1644bB762637cDa133Aa31248F7A8db8b40", "data" : 0x34310e8b0000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E0000000000000000000000000000000000000000000000000000000000000045000000000000000000000000000000000000000000000000000000000000004600000000000000000000000075c412bb58976d1b83bcade11e0df6679c47a281"}],"id": 8}
-//functionId 0xabcdabcd
-//contractId 0x75c412bb58976d1b83bcade11e0df6679c47a281
-static void packFuncContractIds32bytes(char* functionId, char* contractId, char* buf)
-{
-    int nLen = strlen(functionId);
-    memcpy(buf, functionId, strlen(functionId));
-    return;
-    char* bytes = buf;
-    char* funId = &functionId[2];
-    char* contrId = &contractId[2];
-    for (int i = 0; i < 64; i++)
-    {
-        bytes[i] = '0';
-    }
-    bytes[64] = '\0';
-    //printf("%s\n", bytes);
-    for (int i = 0; i < 8; i++)
-    {
-        bytes[i] = funId[i];
-    }
-
-    for (int i = 0; i < 40; i++)
-    {
-        bytes[63 - i] = contrId[39 - i];
-    }
-    //printf("%s\n", bytes);
-}
 
 //sha3 0x75c412bb58976d1b83bcade11e0df6679c47a281
 static void packHashto32bytes(char* hash, char* buf)
@@ -423,28 +390,30 @@ static int curl_easylm(char* infuraId, char* jsonData, time_t* exp_dat)
     curl_header header;
 
     // Add custom headers.
-    //#curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":
-    //[{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":
-    //\"bytes=0011223344556677889900112233445566778899001122334455667788990011\"}],
-    //\"0x34 31 0e 8b 
-    //    00 00 00 00 00 00 00 00 00 00 00 00 62 7b 04 59    8B 6e 97 dD 36 78 55 Eb DC CD DF e1 eE C8 F9 6E
-    //    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-    //    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01\"}],
-    //    00 11 22 33 44 55 66 77 88 99 00 11 22 33 44 55    66 77 88 99 00 11 22 33 44 55 66 77 88 99 00 11
-    //\"id\": 8}" - H "Content-Type: application/json" localhost:7545/
-//    const char* jsonData = "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":\
-// [{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":\
-// \"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}],\
-// \"id\": 8}";
+    /*#curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":
+    [{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":
+    \"bytes=0011223344556677889900112233445566778899001122334455667788990011\"}],
+    \"0x34 31 0e 8b 
+        00 00 00 00 00 00 00 00 00 00 00 00 62 7b 04 59    8B 6e 97 dD 36 78 55 Eb DC CD DF e1 eE C8 F9 6E
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01\"}],
+        00 11 22 33 44 55 66 77 88 99 00 11 22 33 44 55    66 77 88 99 00 11 22 33 44 55 66 77 88 99 00 11
+    \"id\": 8}" - H "Content-Type: application/json" localhost:7545/
+    const char* jsonData = "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":\
+ [{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":\
+ \"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}],\
+ \"id\": 8}";
+ */
     // Add custom headers.
-    //#curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":
-    //[{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":
-    //\"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}],
-    //\"id\": 8}" - H "Content-Type: application/json" localhost:7545/
- //   const char* jsonData = "data:{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":\
- //[{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":\
- //\"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}],\
- //\"id\": 8}";
+    /*#curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":
+    [{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":
+    \"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}],
+    \"id\": 8}" - H "Content-Type: application/json" localhost:7545/
+    const char* jsonData = "data:{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":\
+ [{\"to\": \"0x2e65a1644bB762637cDa133Aa31248F7A8db8b40\", \"data\":\
+ \"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}],\
+ \"id\": 8}";
+ */
     printf("jsonData = %s\n", jsonData);
     printf("strlen (jsonData) = %d\n", (int)strlen(jsonData));
 
@@ -679,23 +648,18 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename, time_t *exp_date,
                             char* buyHashId)
 {
   FILE *pFILE;
-  char s_tmp[170], tmp[170],tmpstr[170], tmpstr1[170];
+  char tmp[170],tmpstr[170], tmpstr1[170];
   char loc_hostVendorProductIds[170];
   int nBuffersSize = 170; // vendorId and productId can be 20 chars long max value - 18446744073709551615
   char loc_hash[44]; /* hash is 20 octets for SHA1 and 16 for MD5 */
                      /* as a string it could be up to 44 characters */
-  char loc_hostid[120], loc_vendor[20], loc_version[20], loc_app[30];
+  char loc_hostid[120], loc_vendor[20], loc_app[30];
   char loc_vendorId[40], loc_productId[40];
   ui8 gen_lMAC[20], hash_octet[20],hostid_octet[36],realhost_octet[16];
-  int loc_ver[5], i, authlen, hashlen, rval, hostidlen, realhostlen;
-  ui32 loc_time;
+  int i, authlen, hashlen, rval, hostidlen;
   ui64 loc_vendorid, loc_productid;
   bool in_vendor = false, in_app = false, app_parsed = false;
-  time_t currtime;
-  tm *timeinfo;
 
-  time( &currtime );
-  timeinfo = localtime(&currtime);
   rval = otherLicenseError;
 
   /*-------------------------------------------------------------------*/
@@ -759,6 +723,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename, time_t *exp_date,
           /*-----------------------------------------------------------*/
           /* this is not this app, so continue to the next line        */
           /*-----------------------------------------------------------*/
+          in_app = false;
           continue;
         }
 
@@ -984,13 +949,9 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename, time_t *exp_date,
     }
     fclose(pFILE);
 
-    if (in_vendor && app_parsed && (bBlockchainCheckNeeded == true))
+    if (in_vendor && in_app && app_parsed && (bBlockchainCheckNeeded == true))
     {
-#ifndef _MINGW
       printf("llEntityId = %llu, llProductId = %llu\n", loc_vendorid, loc_productid); // do blockchain validation
-#else
-      printf("llEntityId = %I64u, llProductId = %I64u\n", loc_vendorid, loc_productid); // do blockchain validation
-#endif
       printf("loc_hash3-%s\n", loc_hash);
       rval = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid, loc_hash, AutoLmOne.infuraProductId, exp_date);
       if (rval == blockchainExpiredLicense)
@@ -1030,7 +991,7 @@ done:
 int DECLARE(AutoLm) AutoLmHashLicense(char *appstr, char *computerid,
                                     ui8 *hashresult)
 {
-  char theMsg[120], tmpstr[20];
+  char theMsg[120];
   int len;
 
   /*-------------------------------------------------------------------*/
@@ -1127,11 +1088,11 @@ int DECLARE(AutoLm) AutoLmStringToHex(char *hexstring, ui8 *result)
 /***********************************************************************/
 int DECLARE(AutoLm) AutoLmCreateLicense(char* filename)
 {
-  char infoString[180];
+  char infoString[200];
   char hashtext[42];
-  ui8 hashstr[20], hexcompid[36];
+  ui8 hashstr[20];
   int i, hostidlen;
-	char hostidstr[136], tmpstr[86], tmpstr2[4];
+	char hostidstr[136], tmpstr[86];
 
   // Check for configuration errors
   if ((filename == NULL) || (AutoLmOne.vendorid <= 0) ||
