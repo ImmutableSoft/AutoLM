@@ -1,8 +1,8 @@
 /***********************************************************************/
 /*                                                                     */
 /*   Module:  common.h                                                 */
-/*   Version: 2006.0                                                   */
-/*   Purpose: Common Header for EasyLM                                 */
+/*   Version: 2020.0                                                   */
+/*   Purpose: Common Header for AutoLM                                 */
 /*                                                                     */
 /*---------------------------------------------------------------------*/
 /*                                                                     */
@@ -29,8 +29,8 @@
 /* SOFTWARE.                                                           */
 /*                                                                     */
 /***********************************************************************/
-#ifndef _AUTOLM_COMMON_H
-#define _AUTOLM_COMMON_H
+#ifndef _COMMON_H
+#define _COMMON_H
  
 /***********************************************************************/
 /* Configuration                                                       */
@@ -62,5 +62,5 @@ typedef unsigned char  ui8;
 #define FREE(n) free(n)
 #endif /*__cplusplus*/
 
-#endif /*_AUTOLM_COMMON_H */
+#endif /*_COMMON_H */
 

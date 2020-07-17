@@ -1,18 +1,32 @@
 /***********************************************************************/
 /*                                                                     */
-/*   Module:  easylm.h                                                 */
-/*   Version: 2010.0                                                   */
-/*   Purpose: Header file for EasyLM, the Easy License Manager         */
+/*   Module:  autolm.h                                                 */
+/*   Version: 2020.0                                                   */
+/*   Purpose: Header file for AutoLM, the Automatic License Manager    */
 /*                                                                     */
 /*---------------------------------------------------------------------*/
 /*                                                                     */
-/*               Copyright 2008, Mibtonix Inc.                         */
-/*                      ALL RIGHTS RESERVED                            */
+/*                 Copyright © 2020 ImmutableSoft Inc.                 */
 /*                                                                     */
-/*   Licensees have the non-exclusive right to use, modify, or extract */
-/*   this computer program for software development at a single site.  */
-/*   This program may be resold or disseminated in executable format   */
-/*   only. The source code may not be redistributed or resold.         */
+/* Permission is hereby granted, free of charge, to any person         */
+/* obtaining a copy of this software and associated documentation      */
+/* files (the “Software”), to deal in the Software without             */
+/* restriction, including without limitation the rights to use, copy,  */
+/* modify, merge, publish, distribute, sublicense, and/or sell copies  */
+/* of the Software, and to permit persons to whom the Software is      */
+/* furnished to do so, subject to the following conditions:            */
+/*                                                                     */
+/* The above copyright notice and this permission notice shall be      */
+/* included in all copies or substantial portions of the Software.     */
+/*                                                                     */
+/* THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,     */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND               */
+/* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS */
+/* BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN  */
+/* ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN   */
+/* CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE    */
+/* SOFTWARE.                                                           */
 /*                                                                     */
 /***********************************************************************/
 #ifndef _AUTOLM_H
@@ -80,7 +94,7 @@ typedef struct AutoLmConfig
   ui64 productid;
   ui8 password[21];
   int mode;
-  int (*blockchainValidate)(ui64, ui64, char*, char*, time_t*);
+  ui64 (*blockchainValidate)(ui64, ui64, char*, char*, time_t*);
   int (*computer_id)(char *);
   char* infuraProductId;
 } AutoLmConfig;
@@ -109,7 +123,7 @@ public:
                     char* infuraId);
 
   int AutoLmValidateLicense(char* filename, time_t *exp_date,
-                            char* buyActivationId);
+                            char* buyActivationId, ui64 *resultValue);
   int AutoLmCreateLicense(char* filename);
 
   /*********************************************************************/
@@ -131,7 +145,7 @@ private:
      ui8 *locstr,   /* IN  - pointer to unique ID  */
      ui32 locstrlen,  /* IN  - length of unique ID */
      ui8 *key);     /* OUT - pointer to resulting 20-byte buffer */
-int AutoLmCalculateHash(int type, ui8 *wholeMsg,
+  int AutoLmCalculateHash(int type, ui8 *wholeMsg,
                            int wholeMsglen, ui8 *result);
 
   AutoLmConfig AutoLmOne;

@@ -2,7 +2,7 @@
 /*                                                                     */
 /*   Module:  compid.cpp                                               */
 /*   Version: 2020.0                                                   */
-/*   Purpose: Replacable computer id for AutoLm, AutoLmMachineId       */
+/*   Purpose: Replaceable computer id for AutoLm, AutoLmMachineId      */
 /*                                                                     */
 /*---------------------------------------------------------------------*/
 /*                                                                     */

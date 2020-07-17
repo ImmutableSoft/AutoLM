@@ -6,6 +6,7 @@ Automatic License Manager build and installation instructions.
 AutoLM depends on curl as a submodule. Perform the commands below
 to clone the latest curl into your build tree.
 
+
 ```
 git submodule init
 git submodule update
@@ -40,7 +41,9 @@ Open Developer Command Prompt for VS 2019
 and move into the winbuild directory and build with nmake.
 
 ```
-cd curl/winbuild
+cd curl
+buildconf.bat
+cd winbuild
 nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
 ```
 
