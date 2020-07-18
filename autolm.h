@@ -43,14 +43,15 @@
  * Build options
  */
 // Ethereum Blockchain Connectivity Options
-#define CURL_HOST_URL         ROPSTEN_INFURA_URL
-#define ADD_BLOCK_CHAIN_CHECK 1  /* append blockchain special char */
-#define BLOCK_CHAIN_CHAR      ':' /* use colon as special char */
-#define ROPSTEN_INFURA_URL    "https://ropsten.infura.io/v3/"
-#define LOCAL_GANACHE_URL     "http://localhost:8545/"
+#define CURL_HOST_URL          ROPSTEN_INFURA_URL
+#define ADD_BLOCK_CHAIN_CHECK  1  /* append blockchain special char */
+#define BLOCK_CHAIN_CHAR       ':' /* use colon as special char */
+#define ROPSTEN_INFURA_URL     "https://ropsten.infura.io/v3/"
+#define LOCAL_GANACHE_URL      "http://localhost:8545/"
+
 
 // Immutable Ecosystem
-#define LICENSE_STATUS_ID    "0x9277d3d6" // Keccak256 ("licenseStatus(uint256, uint256, uint256)") = 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
+#define LICENSE_STATUS_ID      "0x9277d3d6" // Keccak256 ("licenseStatus(uint256, uint256, uint256)") = 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
 #define ROPSTEN_IMMUTABLE_LICENSE_CONTRACT "0x21027DD05168A559330649721D3600196aB0aeC2"
 #define GANACHE_IMMUTABLE_LICENSE_CONTRACT "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
 #define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_IMMUTABLE_LICENSE_CONTRACT
@@ -94,10 +95,10 @@ enum AutoLmResponse
 typedef struct AutoLmConfig
 {
   char vendor[21];
-  int vendorlen;
+  size_t vendorlen;
   ui64 vendorid;
   char product[21];
-  int productlen;
+  size_t productlen;
   ui64 productid;
   ui8 password[21];
   int mode;

@@ -108,7 +108,7 @@ static int string_from_HKLM(const wchar_t * regSubKey,
 int AutoLmMachineId(char *comp_id)
 {
     char tmp[128];
-    int rval;
+    size_t rval;
     const wchar_t *regSubKey = L"SOFTWARE\\Microsoft\\Cryptography\\";
 
     const wchar_t *regValue(L"MachineGuid");
@@ -122,18 +122,18 @@ int AutoLmMachineId(char *comp_id)
     rval = strlen(tmp);
 
     // Strip out dashes from the machine id
-    for (int i = 0; i < rval; ++i)
+    for (size_t i = 0; i < rval; ++i)
     {
       if (tmp[i] == '-')
       {
-        memmove(&tmp[i], &tmp[i + 1], rval - i);
+        memmove(&tmp[i], &tmp[i + 1], rval - (size_t)i);
         --rval;
       }
     }
 
     // Prepend with 0x indicating hex string and return
     sprintf(comp_id, "0x%s", tmp);
-    return strlen(comp_id);
+    return (int)strlen(comp_id);
 }
 
 #else /* Otherwise Linux/BSD/MacOS */
