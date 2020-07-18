@@ -493,58 +493,56 @@ int DECLARE(AutoLm) AutoLmInit(char* vendor, ui64 vendorId,
                                char* password, unsigned int pwdLength,
                                int (*computer_id)(char*), char* infuraId)
 {
-    char tmpstr[36];
-    ui8 compid_octet[36];
-    unsigned int compidlen, i;
+  char tmpstr[36];
+  ui8 compid_octet[36];
+  unsigned int compidlen, i;
 
-    strcpy(AutoLmOne.vendor, vendor);
-    AutoLmOne.vendorlen = strlen(AutoLmOne.vendor);
-    AutoLmOne.vendorid = vendorId;
+  strcpy(AutoLmOne.vendor, vendor);
+  AutoLmOne.vendorlen = strlen(AutoLmOne.vendor);
+  AutoLmOne.vendorid = vendorId;
+ 
+  strcpy(AutoLmOne.product, product);
+  AutoLmOne.productlen = strlen(AutoLmOne.product);
+  AutoLmOne.productid = productId;
+  AutoLmOne.blockchainValidate = validate_onchain;
+  AutoLmOne.infuraProductId = infuraId;
+  AutoLmOne.computer_id = computer_id;
+  if (AutoLmOne.computer_id == NULL)
+    AutoLmOne.computer_id = AutoLmMachineId;
 
-    strcpy(AutoLmOne.product, product);
-    AutoLmOne.productlen = strlen(AutoLmOne.product);
-    AutoLmOne.productid = productId;
-    AutoLmOne.blockchainValidate = validate_onchain;
-    AutoLmOne.infuraProductId = infuraId;
-    AutoLmOne.computer_id = computer_id;
-    if (AutoLmOne.computer_id == NULL)
-      AutoLmOne.computer_id = AutoLmMachineId;
+  /*-------------------------------------------------------------------*/
+  /* Set the authentication node; 1 - noAuth, 2 - MD5, 3 - SHA1        */
+  /*-------------------------------------------------------------------*/
+  AutoLmOne.mode = mode;
+ 
+  /*-------------------------------------------------------------------*/
+  /* Get and convert the computer id returning if error.               */
+  /*-------------------------------------------------------------------*/
+  compidlen = AutoLmOne.computer_id(tmpstr);
+  if (compidlen > 0)
+    compidlen = AutoLmStringToHex(tmpstr, compid_octet);
+  if (compidlen <= 0)
+    return compidInvalid;
 
-    /*-------------------------------------------------------------------*/
-    /* Set the authentication node; 1 - noAuth, 2 - MD5, 3 - SHA1        */
-    /*-------------------------------------------------------------------*/
-    AutoLmOne.mode = mode;
+  /*-------------------------------------------------------------------*/
+  /* Localize the computer id into the password.                       */
+  /*-------------------------------------------------------------------*/
+  if (AutoLmOne.mode == 2)
+    AutoLmPwdToKeyMd5(password, pwdLength, compid_octet, compidlen,
+                      AutoLmOne.password);
+  else if (AutoLmOne.mode == 3)
+    AutoLmPwdToKeySha(password, pwdLength, compid_octet, compidlen,
+                      AutoLmOne.password);
+  else
+    return authenticationFailed;
 
-    /*-------------------------------------------------------------------*/
-    /* Get and convert the computer id returning if error.               */
-    /*-------------------------------------------------------------------*/
-    compidlen = AutoLmOne.computer_id(tmpstr);
-    if (compidlen > 0)
-      compidlen = AutoLmStringToHex(tmpstr, compid_octet);
-    if (compidlen <= 0)
-      return compidInvalid;
+  /*-------------------------------------------------------------------*/
+  /* Clear the password from the stack                                 */
+  /*-------------------------------------------------------------------*/
+  for (i = 0; i < pwdLength; i++)
+    password[i] = '\0';
 
-    /*-------------------------------------------------------------------*/
-    /* Localize the computer id into the password.                       */
-    /*-------------------------------------------------------------------*/
-    if (AutoLmOne.mode == 2)
-      AutoLmPwdToKeyMd5(password, pwdLength, compid_octet, compidlen,
-                        AutoLmOne.password);
-    else if (AutoLmOne.mode == 3)
-      AutoLmPwdToKeySha(password, pwdLength, compid_octet, compidlen,
-                        AutoLmOne.password);
-    else
-      return authenticationFailed;
-
-    /*-------------------------------------------------------------------*/
-    /* Clear the password from the stack                                 */
-    /*-------------------------------------------------------------------*/
-    for (i = 0; i < pwdLength; i++)
-    {
-        password[i] = '\0';
-    }
-
-    return 0;
+  return 0;
 }
 
 /***********************************************************************/
