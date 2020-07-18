@@ -47,9 +47,14 @@
 
 // For reading an HTML response into memory with curl
 struct MemoryStruct {
-    char* memory;
-    size_t size;
+  char* memory;
+  size_t size;
 };
+
+/*
+ Example command line (Entity 2, Product 0, Activation 1)
+ curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\": [{\"to\": \"0x21027DD05168A559330649721D3600196aB0aeC2\", \"data\": \"0x9277d3d6000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}, \"latest\"], \"id\": 1}" https://ropsten.infura.io/v3/<ProductId>
+*/
 
 /***********************************************************************/
 /* pack_hash_to_32bytes: Pack a hash string to 32 byte array.          */
@@ -62,18 +67,16 @@ struct MemoryStruct {
 /***********************************************************************/
 static void pack_hash_to_32bytes(char* hash, char* buf)
 {
-    char * bytes = buf;
-    for (int i = 0; i < 64; i++)
-    {
-        bytes[i] = '0';
-    }
-    bytes[64] = '\0';
-    //printf("%s\n", bytes);
-    for (int i = 0; i < 40; i++)
-    {
-        bytes[63 - i] = hash[39 - i];
-    }
-    //printf("%s\n", bytes);
+  char * bytes = buf;
+
+  // Fill result buffer with zero strings and NULL terminate
+  for (int i = 0; i < 64; i++)
+    bytes[i] = '0';
+  bytes[64] = '\0';
+
+  // Fill the end of the buffer up with the hash
+  for (int i = 0; i < 40; i++)
+    bytes[63 - i] = hash[39 - i];
 }
 
 /***********************************************************************/
@@ -87,47 +90,37 @@ static void pack_hash_to_32bytes(char* hash, char* buf)
 /***********************************************************************/
 static void pack_ll32bytes(ui64 ll, char* buf)
 {
-        int modulo = -1;
-        ui64 remain = ll;
-        int bytesCount = 0;
-        char* bytes = buf;
-        //for (int i = 0; i < 32; i++)
-        //{
-        //    bytes[i * 2] = '0' + (i % 10);
-        //    bytes[(i * 2) + 1] = '0' + (i % 10);
-        //}
-        bytes[64] = '\0';
-        //printf("%s\n", bytes);
-        for (int i = 0; i < 64; i++)
-        {
-            bytes[i] = '0';
-        }
-        //printf("%s\n", bytes);
+  int modulo = -1;
+  ui64 remain = ll;
+  int bytesCount = 0;
+  char* bytes = buf;
+  int offset = 32 - 1;
 
-        printf("ll = %llu, ll = 0x%llx\n", ll, ll);
-        int offset = 32 - 1;
-        while (remain > 0)
-        {
-            modulo = remain % 256;
-            remain = remain / 256;
-            if (remain == 0 && modulo == 0)
-            {
-                break;
-            }
-            else
-            {
-                //printf("byte[%d]=0x%02x\n", bytesCount, modulo);
-                char temp[3];
-                //sprintf_s(temp, "%02x", modulo);
-                sprintf(temp, "%02x", modulo);
-                bytes[offset * 2] = temp[0];
-                bytes[(offset * 2) + 1] = temp[1];
-                bytesCount++;
-                offset--;
-             }
-        }
-        //printf("bytesCount=%d\n", bytesCount);
-        //printf("%s\n", bytes);
+  // Fill result buffer with zero strings and NULL terminate
+  for (int i = 0; i < 64; i++)
+            bytes[i] = '0';
+  bytes[64] = '\0';
+
+//  printf("ll = %llu, ll = 0x%llx\n", ll, ll);
+
+  while (remain > 0)
+  {
+    modulo = remain % 256;
+    remain = remain / 256;
+    if (!(remain == 0 && modulo == 0))
+    {
+      char temp[3];
+
+      // String print the byte and copy to result
+      sprintf(temp, "%02x", modulo);
+      bytes[offset * 2] = temp[0];
+      bytes[(offset * 2) + 1] = temp[1];
+      bytesCount++;
+      offset--;
+    }
+    else
+      break;
+  }
 }
 
 /***********************************************************************/
@@ -220,76 +213,77 @@ static ui64 unpack_param_value(char* param)
 /*     Returns: the unpacked ui64 bit value of the parameter           */
 /*                                                                     */
 /***********************************************************************/
-//{"id":8, "jsonrpc" : "2.0", "result" : "0x"}
-//{"id":1, "jsonrpc" : "2.0", "result" : "0x000000000000000000000000000000000000000000000000000000000000000a"}
 static ui64 parse_json_result(const char* jsonResult, time_t* exp_dat)
 {
-//    printf("parse_json_result()\n jsonResult-%s\n", jsonResult);
-    /*-------------------------------------------------------------------*/
-    /* see if json result has 0x hex string                              */
-    /*-------------------------------------------------------------------*/
     int cnt = 0;
-    int ret = licenseValid;
-    if (strstr(jsonResult, "0x"))
+    int ret = 0;
+ 
+ //  printf("parse_json_result()\n jsonResult-%s\n", jsonResult);
+  /*-------------------------------------------------------------------*/
+  /* see if json result has 0x hex string                              */
+  /*-------------------------------------------------------------------*/
+  if (strstr(jsonResult, "0x"))
+  {
+    char tmpstr[3 * 64 + 5], s_tmp[3 * 64 + 5];
+    const char* hexstring = strstr(jsonResult, "0x");
+    strcpy(tmpstr, hexstring);
+    strcpy(s_tmp, &(tmpstr[2]));
+    strcpy(tmpstr, s_tmp);
+    if (strchr(tmpstr, '"'))
     {
-        char tmpstr[3 * 64 + 5], s_tmp[3 * 64 + 5];
-        const char* hexstring = strstr(jsonResult, "0x");
-        strcpy(tmpstr, hexstring);
-        strcpy(s_tmp, &(tmpstr[2]));
-        strcpy(tmpstr, s_tmp);
-        if (strchr(tmpstr, '"'))
+      strchr(tmpstr, '"')[0] = '\0';
+    }
+
+    cnt = strlen(tmpstr);
+    if (cnt > 0)
+    {
+      int nParamsCount = cnt / 64;
+      printf("nParamsCount = %d\n", nParamsCount);
+      if (nParamsCount == 3)
+      {
+        ui64 llParams[3];
+        for (int i = 0; i < nParamsCount; i++)
         {
-            strchr(tmpstr, '"')[0] = '\0';
+          strncpy(s_tmp, &(tmpstr[i * 64]), 64);
+          s_tmp[64] = '\0';
+          printf("param[%d] - %s\n", i, s_tmp);
+          llParams[i] = unpack_param_value(s_tmp);
+        }
+        if ((llParams[0] == 0) && (llParams[1] == 0) && (llParams[2] == 0))
+        {
+           *exp_dat = llParams[1];
+           ret = 0;
         }
 
-        cnt = strlen(tmpstr);
-        if (cnt > 0)
+        // If the activation value is one or greater (valid), return it
+        else if (llParams[0] >= 1)
         {
-            int nParamsCount = cnt / 64;
-            printf("nParamsCount = %d\n", nParamsCount);
-            if (nParamsCount == 3)
-            {
-                ui64 llParams[3];
-                for (int i = 0; i < nParamsCount; i++)
-                {
-                    strncpy(s_tmp, &(tmpstr[i * 64]), 64);
-                    s_tmp[64] = '\0';
-                    printf("param[%d] - %s\n", i, s_tmp);
-                    llParams[i] = unpack_param_value(s_tmp);
-                }
-                if ((llParams[0] == 0) && (llParams[1] == 0) && (llParams[2] == 0))
-                {
-                    *exp_dat = llParams[1];
-                    ret = 0;
-                }
-                else if (llParams[0] >= 1)
-                {
-                    *exp_dat = llParams[1];
-                    ret = llParams[0];// licenseValid;
-                }
-                else
-                {
-                    ret = 0; // other values not expected
-                }
-            }
-            else
-            {
-                printf("json params count not valid count = %d\n", nParamsCount);
-                ret = 0; // xxx maybe return other error
-            }
+           *exp_dat = llParams[1];
+           ret = llParams[0];
         }
+
+        // Otherwise not found/valid
         else
-        {
-            printf("json params not found returned 0x\n");
-            ret = 0; // xxx maybe return other error
-        }
+          ret = 0;
+      }
+      else
+      {
+        printf("json params count not valid count = %d\n", nParamsCount);
+        ret = 0; // xxx maybe return other error
+      }
     }
     else
     {
-        printf("json params not found returned\n");
-        ret = 0; // xxx maybe return other error
+      printf("json params not found returned 0x\n");
+      ret = 0; // xxx maybe return other error
     }
-    return ret;
+  }
+  else
+  {
+    printf("json params not found returned\n");
+    ret = 0; // xxx maybe return other error
+  }
+  return ret;
 }
 
 /***********************************************************************/
@@ -325,7 +319,7 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 }
 
 /***********************************************************************/
-/* curl_autolm: send licenseStatus() contract call, parse/return result*/
+/* autolm_read_activation: licenseStatus contract call, parse result   */
 /*                                                                     */
 /*      Inputs: infuraId = the Infura ProductID to use                 */
 /*              jsonData = the encoded Json data for function call     */
@@ -334,9 +328,9 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 /*       Returns: the value of any license activation returned         */
 /*                                                                     */
 /***********************************************************************/
-static ui64 curl_easylm(char* infuraId, char* jsonData, time_t* exp_dat)
+static ui64 autolm_read_activation(char* infuraId, char* jsonData,
+                                 time_t* exp_dat)
 {
-  int res;
   ui64 resValue = 0;
   struct MemoryStruct chunk;
 
@@ -346,92 +340,77 @@ static ui64 curl_easylm(char* infuraId, char* jsonData, time_t* exp_dat)
   curl_global_init(CURL_GLOBAL_ALL);
 
   // Easy object to handle the connection.
-    CURL *easy = curl_easy_init();
+  CURL *easy = curl_easy_init();
 
-    /* send all data to this function  */
-    curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, curl_write_memory_callback);
+  /* send all data to this function  */
+  curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, curl_write_memory_callback);
  
-    /* we pass our 'chunk' struct to the callback function */ 
-    curl_easy_setopt(easy, CURLOPT_WRITEDATA, (void *)&chunk);
+  /* we pass our 'chunk' struct to the callback function */ 
+  curl_easy_setopt(easy, CURLOPT_WRITEDATA, (void *)&chunk);
  
-    // You can choose between 1L and 0L (enable verbose video log or disable)
-    curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(easy, CURLOPT_HEADER, 1L);
-    curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); // what is it for ???
+  // You can choose between 1L and 0L (enable verbose video log or disable)
+  curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(easy, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); // what is it for ???
 
-    // Let's create an object which will contain a list of headers.
-
-    printf("jsonData = %s\n", jsonData);
-    printf("strlen (jsonData) = %d\n", (int)strlen(jsonData));
+  // Let's create an object which will contain a list of headers.
+  printf("jsonData = %s\n", jsonData);
+  printf("strlen (jsonData) = %d\n", (int)strlen(jsonData));
 
 #ifdef _WINDOWS
 #ifdef _OPENSSL
-    curl_easy_setopt(easy, CURLOPT_CAINFO, "./cacert.pem");
+  // Point curl to a root certificate store (file required)
+  curl_easy_setopt(easy, CURLOPT_CAINFO, "./cacert.pem");
 #endif
 #endif
 
-    /* post json data */
-    curl_easy_setopt(easy, CURLOPT_POSTFIELDS, jsonData);
-    unsigned int jsonDataLength = (int)strlen(jsonData);
-    printf("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n", jsonDataLength);
-    /* set the size of the postfields data */
-    //curl_easy_setopt(easyhandle, CURLOPT_POSTFIELDSIZE, 23L);
-    curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, jsonDataLength);
+  /* Post json data */
+  curl_easy_setopt(easy, CURLOPT_POSTFIELDS, jsonData);
+  unsigned int jsonDataLength = (int)strlen(jsonData);
+  printf("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n", jsonDataLength);
+  /* set the size of the postfields data */
+  curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, jsonDataLength);
 
-    struct curl_slist *head = NULL;
+  struct curl_slist *head = NULL;
  
-    /* Remove a header curl would otherwise add by itself */ 
-    const char* headerContentType = "Content-type: application/json";
-    printf("headerContentType = %s\n", headerContentType);
-    head = curl_slist_append(head, headerContentType);
+  // Set the content type header to application/json
+  const char* headerContentType = "Content-type: application/json";
+  printf("headerContentType = %s\n", headerContentType);
+  head = curl_slist_append(head, headerContentType);
 
-    // Add the headers to the easy object.
-    curl_easy_setopt(easy, CURLOPT_HTTPHEADER, head);
+  // Add the headers to the easy object.
+  curl_easy_setopt(easy, CURLOPT_HTTPHEADER, head);
 
-    // Your URL.
-    const char* url;
-    url = CURL_HOST_URL; //  "http://localhost:8545/"
-    char urlBuf[128];
-    if (!strcmp(url, ROPSTEN_INFURA_URL))
-    {
-        sprintf(urlBuf, "%s%s", url, infuraId); // VENDOR_INFURA_PROJECT_ID);
-    }
-    else
-    {
-        sprintf(urlBuf, "%s", url);
-    }
-    //url = GENACHE_LINUX_HOST_URL;
-     //url = "localhost"; //xxx uncomment to see the headers sent to localhost
-    printf("url = %s\n", urlBuf);
-    //   printf("url.c_str = %s\n", url.c_str());
-    curl_easy_setopt(easy, CURLOPT_URL, urlBuf);
+  // Your URL.
+  const char* url;
+  url = CURL_HOST_URL; //  "http://localhost:8545/"
+  char urlBuf[128];
+  if (!strcmp(url, ROPSTEN_INFURA_URL))
+    sprintf(urlBuf, "%s%s", url, infuraId);
+  else
+    sprintf(urlBuf, "%s", url);
+
+  curl_easy_setopt(easy, CURLOPT_URL, urlBuf);
  
-    res = curl_easy_perform(easy);
-    if (res)
-    {
-        printf("Error performing curl request");
-    }
-    else
-    {
-//      std::string strjson = str.str();
-      char* jsonResult = chunk.memory;
-      jsonResult[chunk.size] = '\0';
-      printf("curl (%s) returned\n%s\n", urlBuf, jsonResult);
-      resValue = parse_json_result(jsonResult, exp_dat);
-    }
-    curl_easy_cleanup(easy); // Destroy easy curl object ie. close connection 
-    curl_global_cleanup();
-    return resValue;
+  // Perform the HTTP request
+  if (curl_easy_perform(easy) == 0)
+  {
+    char* jsonResult = chunk.memory;
+
+    // Ensure NULL terminated
+    jsonResult[chunk.size] = '\0';
+
+    // Parse the result value and expiration date
+    resValue = parse_json_result(jsonResult, exp_dat);
+  }
+  else
+    printf("Error performing curl request");
+
+  // Destroy easy curl objects and return the result
+  curl_easy_cleanup(easy);
+  curl_global_cleanup();
+  return resValue;
 }
-
-//curl localhost : 8545 - X POST --data '{"jsonrpc":"2.0", "method":"eth_call", 
-//"params":[{"from": "0xsenderAccount", "to": "0xcontractAddress", 
-//"data": "0x6ffa1caa0000000000000000000000000000000000000000000000000000000000000005"}], "id":1}'
-#define LICENSE_STATUS_ID "0x9277d3d6" // Keccak256 ("licenseStatus(uint256, uint256, uint256)") = 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
-//#define LICENSE_CONTRACT "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e" // ImmutableLicense contract address
-#define ROPSTEN_IMMUTABLE_LICENSE_CONTRACT "0x21027DD05168A559330649721D3600196aB0aeC2"
-#define GENACHE_IMMUTABLE_LICENSE_CONTRACT "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
-#define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_IMMUTABLE_LICENSE_CONTRACT
 
 /***********************************************************************/
 /* validate_onchain: validate a license file on the blockchain         */
@@ -448,57 +427,41 @@ static ui64 curl_easylm(char* infuraId, char* jsonData, time_t* exp_dat)
 ui64 validate_onchain(ui64 entityId, ui64 productId, char* hashId,
                       char* infuraId, time_t* exp_date)
 {
-    printf("curlBlockchainValidateLicense(%llu, %llu, %s) called\n", entityId, productId, hashId);
-    printf("infuraId - %s\n", infuraId);
+  char jsonParams[(4 * 64) + 10 + 1]; // 4x 256 values + 0x34310e8b 10 bytes functionId + 1
+  char funcId[] = LICENSE_STATUS_ID;
 
-    char jsonParams[(4 * 64) + 10 + 1]; // 4x 256 values + 0x34310e8b 10 bytes functionId + 1
-    //char funcId[] = "0x34310e8b";
-    //char contId[] = "0x2e65a1644bB762637cDa133Aa31248F7A8db8b40"; // contract address
-    //char funcId[] = "0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E";
-    char funcId[] = LICENSE_STATUS_ID;
-    //char funcId[] = "0x34310e8b0000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E";
+  // Encode the function parameters as JSON paramters
+  encode_json_params(funcId, entityId, productId, hashId, jsonParams);
+//  printf("%s\n", jsonParams);
 
-    encode_json_params(funcId, entityId, productId, hashId, jsonParams);
-    printf("%s\n", jsonParams);
-    //int nLen = strlen(jsonParams);
-    char jsonDataPrefixBuf[256];
-    const char* jsonDataPrefix = "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
-    sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_LICENSE_CONTRACT);
-    printf("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
-    int nLengthPrefix = strlen(jsonDataPrefixBuf);
-    //    char jsonDataParams[2 + (4 * 64) + 1];
-//    strcpy(&jsonDataParams[2], jsonParams);
-//    printf("jsonDataParams = %s\n", jsonDataParams);
+  char jsonDataPrefixBuf[256];
+  const char* jsonDataPrefix = "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
 
-    //\"0x34310e8b000000000000000000000000627b04598B6e97dD367855EbDCCDDFe1eEC8F96E00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001
-    char jsonDataSuffix[] = "\"}, \"latest\"],\"id\": 8}";
-    printf("jsonDataEndfix = %s\n", jsonDataSuffix);
-    int nLengthSuffix = strlen(jsonDataSuffix);
-    //\"}],\"id\": 8}";
-    char jsonDataAll[2048];
-    //for (int i = 0; i < 2048; i++)
-    //{
-    //    jsonDataAll[i] = 0;
-    //}
-    //int n = sizeof(jsonDataAll);
-   //strncpy_s(jsonDataAll, sizeof(jsonDataAll), jsonDataPrefix, nLengthPrefix);
-   // strcpy_s(jsonDataAll, sizeof(jsonDataAll), jsonDataPrefix);
-    strcpy(jsonDataAll, jsonDataPrefixBuf);
+  sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_LICENSE_CONTRACT);
+//    printf("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
+  int nLengthPrefix = strlen(jsonDataPrefixBuf);
 
-    //n = sizeof(jsonDataAll);
-    int nLen = strlen(jsonDataAll);
-    int nLengthParams = strlen(jsonParams);
-    //strncpy_s(&jsonDataAll[nLen], sizeof(jsonDataAll), jsonDataParams, nLengthParams);
-    //strcpy_s(&jsonDataAll[nLen], sizeof(jsonDataAll), jsonDataParams);
-    strcpy(&jsonDataAll[nLen], jsonParams);
-    //n = sizeof(jsonDataAll);
-    nLen = strlen(jsonDataAll);
-    //strncpy_s(&jsonDataAll[strlen(jsonDataAll)], sizeof(jsonDataAll), jsonDataEndfix, nLengthEndfix);
-    strcpy(&jsonDataAll[strlen(jsonDataAll)], jsonDataSuffix);
-    int nDataLength = nLengthPrefix + nLengthParams + nLengthSuffix;
-    jsonDataAll[nDataLength] = '\0';
-    printf("jsonData = %s\n", jsonDataAll);
-    return curl_easylm(infuraId, jsonDataAll, exp_date);
+    // Hard code the suffix
+    //   (TODO: make 8 a random id and check in response)
+  char jsonDataSuffix[] = "\"}, \"latest\"],\"id\": 8}";
+//    printf("jsonDataEndfix = %s\n", jsonDataSuffix);
+  int nLengthSuffix = strlen(jsonDataSuffix);
+
+  char jsonDataAll[2048];
+  strcpy(jsonDataAll, jsonDataPrefixBuf);
+
+  // Add the JSON encoded parameters to the buffer
+  int nLen = strlen(jsonDataAll);
+  int nLengthParams = strlen(jsonParams);
+  strcpy(&jsonDataAll[nLen], jsonParams);
+
+  // Add the data suffix, sanitize and call read_activation
+  nLen = strlen(jsonDataAll);
+  strcpy(&jsonDataAll[strlen(jsonDataAll)], jsonDataSuffix);
+  int nDataLength = nLengthPrefix + nLengthParams + nLengthSuffix;
+  jsonDataAll[nDataLength] = '\0';
+  printf("jsonData = %s\n", jsonDataAll);
+  return autolm_read_activation(infuraId, jsonDataAll, exp_date);
 }
 
 #ifdef __cplusplus
@@ -824,8 +787,6 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
         }
         app_parsed = true;
 
-        printf("loc_hash0-%s\n", loc_hash);
-
         /*-------------------------------------------------------------*/
         /* Convert hex string to hex value                             */
         /*-------------------------------------------------------------*/
@@ -835,8 +796,6 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
           rval = authFieldInvalid;
           goto done;
         }
-
-        printf("loc_hash1-%s\n", loc_hash);
 
         if (hashlen != authlen)
         {
@@ -905,7 +864,6 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
       ui64 resValue;
 
       printf("llEntityId = %llu, llProductId = %llu\n", loc_vendorid, loc_productid); // do blockchain validation
-      printf("loc_hash3-%s\n", loc_hash);
       resValue = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid, loc_hash, AutoLmOne.infuraProductId, exp_date);
       if (resultValue)
         *resultValue = resValue;
@@ -941,11 +899,11 @@ done:
 /*              computerid = the computer identifier, in string form   */
 /*              hashresult = the resulting hash                        */
 /*                                                                     */
-/*     Returns: 0 if success, otherwise an error occured               */
+/*     Returns: 0 if success, otherwise an error occurred              */
 /*                                                                     */
 /***********************************************************************/
 int DECLARE(AutoLm) AutoLmHashLicense(char *appstr, char *computerid,
-                                    ui8 *hashresult)
+                                      ui8 *hashresult)
 {
   char theMsg[120];
   int len;
