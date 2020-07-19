@@ -2,7 +2,8 @@
 /*                                                                     */
 /*   Module:  autolm.cpp                                               */
 /*   Version: 2020.0                                                   */
-/*   Purpose: C++ of AutoLM, the Automated License Manager             */
+/*   Purpose: Implementation of AutoLM, the Automated License Manager  */
+/*            utilizing the Immutable Ecosystem                        */
 /*                                                                     */
 /*---------------------------------------------------------------------*/
 /*                                                                     */
@@ -38,7 +39,7 @@
 #include <ctype.h>
 #include "autolm.h"
 
-#ifdef _MINGW //WIN32
+#ifdef _MINGW
 #define SOCKET int  // avoid winsock2.h/socket.h
 #include "process.h"
 #endif
@@ -68,7 +69,7 @@ static void pack_hash_to_32bytes(char* hash, char* buf)
   // Fill result buffer with zero strings and NULL terminate
   for (int i = 0; i < 64; i++)
     bytes[i] = '0';
-  bytes[64] = '\0';
+  bytes[64] = 0;
 
   // Fill the end of the buffer up with the hash
   for (int i = 0; i < 40; i++)
@@ -95,9 +96,9 @@ static void pack_ll32bytes(ui64 ll, char* buf)
   // Fill result buffer with zero strings and NULL terminate
   for (int i = 0; i < 64; i++)
             bytes[i] = '0';
-  bytes[64] = '\0';
+  bytes[64] = 0;
 
-//  printf("ll = %llu, ll = 0x%llx\n", ll, ll);
+  PRINTF("ll = %llu, ll = 0x%llx\n", ll, ll);
 
   while (remain > 0)
   {
@@ -138,7 +139,7 @@ static void encode_json_params(char* functionId, ui64 entitiId,
 
   // First encode the function identifier
   memcpy(params, functionId, nLen);
-  params[nLen] = '\0';
+  params[nLen] = 0;
 
   // The first parameter is the entity identifier
   pack_ll32bytes(entitiId, params + nLen); //3rd
@@ -163,7 +164,7 @@ static void encode_json_params(char* functionId, ui64 entitiId,
 static ui64 unpack_param_value(char* param)
 {
   ui64 ll = 0;
-  int n;
+  int n = 0;
   ui64 llpower16 = 0;
   for (int i = 0; i < 64; i++)
   {
@@ -197,7 +198,7 @@ static ui64 unpack_param_value(char* param)
     }
   }
 
-//  printf("ll = %llu\n", ll);
+  PRINTF("ll = %llu\n", ll);
   return ll;
 }
 
@@ -209,12 +210,13 @@ static ui64 unpack_param_value(char* param)
 /*     Returns: the unpacked ui64 bit value of the parameter           */
 /*                                                                     */
 /***********************************************************************/
-static ui64 parse_json_result(const char* jsonResult, time_t* exp_dat)
+static int parse_json_result(const char* jsonResult, time_t* exp_dat, ui64* ret_value)
 {
-    size_t cnt = 0;
-    ui64 ret = 0;
+  size_t cnt = 0;
+  int ret = 0;
  
- //  printf("parse_json_result()\n jsonResult-%s\n", jsonResult);
+  PRINTF("parse_json_result()\n jsonResult-%s\n", jsonResult);
+
   /*-------------------------------------------------------------------*/
   /* see if json result has 0x hex string                              */
   /*-------------------------------------------------------------------*/
@@ -227,57 +229,65 @@ static ui64 parse_json_result(const char* jsonResult, time_t* exp_dat)
     strcpy(tmpstr, s_tmp);
     if (strchr(tmpstr, '"'))
     {
-      strchr(tmpstr, '"')[0] = '\0';
+      strchr(tmpstr, '"')[0] = 0;
     }
 
     cnt = strlen(tmpstr);
     if (cnt > 0)
     {
-      size_t nParamsCount = cnt / 64;
-      printf("nParamsCount = %zd\n", nParamsCount);
+      int nParamsCount = (int)cnt / 64;
+      PRINTF("nParamsCount = %d\n", nParamsCount);
       if (nParamsCount == 3)
       {
         ui64 llParams[3];
-        for (size_t i = 0; i < nParamsCount; i++)
+        for (int i = 0; i < nParamsCount; i++)
         {
           strncpy(s_tmp, &(tmpstr[i * 64]), 64);
-          s_tmp[64] = '\0';
-          printf("param[%zd] - %s\n", i, s_tmp);
+          s_tmp[64] = 0;
+          PRINTF("param[%d] - %s\n", i, s_tmp);
           llParams[i] = unpack_param_value(s_tmp);
         }
         if ((llParams[0] == 0) && (llParams[1] == 0) && (llParams[2] == 0))
         {
-           *exp_dat = llParams[1];
-           ret = 0;
+           if (exp_dat)
+             *exp_dat = 0;
+           if (ret_value)
+             *ret_value = 0;
+
+           ret = blockchainExpiredLicense;
         }
 
         // If the activation value is one or greater (valid), return it
         else if (llParams[0] >= 1)
         {
-           *exp_dat = llParams[1];
-           ret = llParams[0];
+          if (exp_dat)
+            *exp_dat = llParams[1];
+          if (ret_value)
+            *ret_value = llParams[0];
+
+          ret = licenseValid;
         }
 
         // Otherwise not found/valid
         else
-          ret = 0;
+          ret = blockchainAuthenticationFailed;
       }
       else
       {
-        printf("json params count not valid count = %zd\n", nParamsCount);
-        ret = 0; // xxx maybe return other error
+        PRINTF("json params count not valid count = %d\n", nParamsCount);
+        ret = blockchainAuthenticationFailed; // xxx maybe return other error
       }
     }
     else
     {
-      printf("json params not found returned 0x\n");
-      ret = 0; // xxx maybe return other error
+      PRINTF("json params not found returned 0x\n");
+      ret = blockchainAuthenticationFailed; // xxx maybe return other error
     }
   }
   else
   {
-    printf("json params not found returned\n");
-    ret = 0; // xxx maybe return other error
+    PRINTF("json params not found returned\n");
+    ret = blockchainAuthenticationFailed; // xxx maybe return other error
   }
   return ret;
 }
@@ -303,12 +313,12 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
   if(resultSize + realsize > MAX_SIZE_JSON_RESPONSE)
   {
     /* out of memory! */ 
-    printf("not enough memory (try increasing MAX_SIZE_JSON_RESPONSE)\n");
+    PRINTF("not enough memory (try increasing MAX_SIZE_JSON_RESPONSE)\n");
     return 0;
   }
  
   memcpy(&(resultBuffer[resultSize]), contents, realsize);
-  resultBuffer[resultSize + realsize] = '\0';
+  resultBuffer[resultSize + realsize] = 0;
  
   return realsize;
 }
@@ -323,13 +333,14 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 /*       Returns: the value of any license activation returned         */
 /*                                                                     */
 /***********************************************************************/
-ui64 autolm_read_activation(char* infuraId, char* jsonData,
-                                 time_t* exp_dat)
+static int autolm_read_activation(char* infuraId, char* jsonData,
+                                 time_t* exp_dat, ui64* ret_value)
 {
-  ui64 resValue = 0;
+  int res;
+
   // For reading an HTML response string into memory with curl
   char curlResponseMemory[MAX_SIZE_JSON_RESPONSE];
-  curlResponseMemory[0] = '\0'; // start with empty string
+  curlResponseMemory[0] = 0; // start with empty string
 
   // Initialize curl
   curl_global_init(CURL_GLOBAL_ALL);
@@ -344,13 +355,17 @@ ui64 autolm_read_activation(char* infuraId, char* jsonData,
   curl_easy_setopt(easy, CURLOPT_WRITEDATA, (void *)curlResponseMemory);
  
   // You can choose between 1L and 0L (enable verbose video log or disable)
+#if AUTOLM_DEBUG
   curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
+#else
+  curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
+#endif
   curl_easy_setopt(easy, CURLOPT_HEADER, 1L);
   curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); // what is it for ???
 
   // Let's create an object which will contain a list of headers.
-  printf("jsonData = %s\n", jsonData);
-  printf("strlen (jsonData) = %d\n", (int)strlen(jsonData));
+  PRINTF("jsonData = %s\n", jsonData);
+  PRINTF("strlen (jsonData) = %d\n", (int)strlen(jsonData));
 
 #ifdef _WINDOWS
 #ifdef _OPENSSL
@@ -362,7 +377,7 @@ ui64 autolm_read_activation(char* infuraId, char* jsonData,
   /* Post json data */
   curl_easy_setopt(easy, CURLOPT_POSTFIELDS, jsonData);
   unsigned int jsonDataLength = (int)strlen(jsonData);
-  printf("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n", jsonDataLength);
+  PRINTF("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n", jsonDataLength);
   /* set the size of the postfields data */
   curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, jsonDataLength);
 
@@ -370,7 +385,7 @@ ui64 autolm_read_activation(char* infuraId, char* jsonData,
  
   // Set the content type header to application/json
   const char* headerContentType = "Content-type: application/json";
-  printf("headerContentType = %s\n", headerContentType);
+  PRINTF("headerContentType = %s\n", headerContentType);
   head = curl_slist_append(head, headerContentType);
 
   // Add the headers to the easy object.
@@ -380,26 +395,30 @@ ui64 autolm_read_activation(char* infuraId, char* jsonData,
   const char* url;
   url = CURL_HOST_URL; //  "http://localhost:8545/"
   char urlBuf[128];
-  if (!strcmp(url, ROPSTEN_INFURA_URL))
+  if (strcmp(url, ROPSTEN_INFURA_URL) == 0)
     sprintf(urlBuf, "%s%s", url, infuraId);
   else
     sprintf(urlBuf, "%s", url);
 
+  PRINTF("URL = %s\n", urlBuf);
   curl_easy_setopt(easy, CURLOPT_URL, urlBuf);
  
   // Perform the HTTP request
   if (curl_easy_perform(easy) == 0)
   {
     // Parse the result value and expiration date
-    resValue = parse_json_result(curlResponseMemory, exp_dat);
+    res = parse_json_result(curlResponseMemory, exp_dat, ret_value);
   }
   else
-    printf("Error performing curl request");
+  {
+    PRINTF("Error performing curl request");
+    res = curlPerformFailed;
+  }
 
   // Destroy easy curl objects and return the result
   curl_easy_cleanup(easy);
   curl_global_cleanup();
-  return resValue;
+  return res;
 }
 
 /***********************************************************************/
@@ -414,27 +433,27 @@ ui64 autolm_read_activation(char* infuraId, char* jsonData,
 /*     Returns: the value of any license activation returned           */
 /*                                                                     */
 /***********************************************************************/
-ui64 validate_onchain(ui64 entityId, ui64 productId, char* hashId,
-                      char* infuraId, time_t* exp_date)
+int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
+                     char* infuraId, time_t* exp_date, ui64* ret_value)
 {
   char jsonParams[(4 * 64) + 10 + 1]; // 4x 256 values + 0x34310e8b 10 bytes functionId + 1
   char funcId[] = LICENSE_STATUS_ID;
 
   // Encode the function parameters as JSON paramters
   encode_json_params(funcId, entityId, productId, hashId, jsonParams);
-//  printf("%s\n", jsonParams);
+  PRINTF("%s\n", jsonParams);
 
   char jsonDataPrefixBuf[256];
   const char* jsonDataPrefix = "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
 
   sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_LICENSE_CONTRACT);
-//    printf("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
+  PRINTF("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
   size_t nLengthPrefix = strlen(jsonDataPrefixBuf);
 
     // Hard code the suffix
     //   (TODO: make 8 a random id and check in response)
   char jsonDataSuffix[] = "\"}, \"latest\"],\"id\": 8}";
-//    printf("jsonDataEndfix = %s\n", jsonDataSuffix);
+  PRINTF("jsonDataEndfix = %s\n", jsonDataSuffix);
   size_t nLengthSuffix = strlen(jsonDataSuffix);
 
   char jsonDataAll[2048];
@@ -449,9 +468,9 @@ ui64 validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   nLen = strlen(jsonDataAll);
   strcpy(&jsonDataAll[strlen(jsonDataAll)], jsonDataSuffix);
   size_t nDataLength = nLengthPrefix + nLengthParams + nLengthSuffix;
-  jsonDataAll[nDataLength] = '\0';
-  printf("jsonData = %s\n", jsonDataAll);
-  return autolm_read_activation(infuraId, jsonDataAll, exp_date);
+  jsonDataAll[nDataLength] = 0;
+  PRINTF("jsonData = %s\n", jsonDataAll);
+  return autolm_read_activation(infuraId, jsonDataAll, exp_date, ret_value);
 }
 
 #ifdef __cplusplus
@@ -461,6 +480,7 @@ ui64 validate_onchain(ui64 entityId, ui64 productId, char* hashId,
 /***********************************************************************/
 AutoLm::AutoLm()
 {
+  memset(&AutoLmOne, 0, sizeof(AutoLmConfig));
 }
 
 /***********************************************************************/
@@ -475,17 +495,21 @@ AutoLm::~AutoLm()
 /***********************************************************************/
 /* AutoLmInit: Initialize AutoLM with vendor/product credentials       */
 /*                                                                     */
-/*     Returns: 0 if success, otherwise an error occured               */
+/*     Returns: 0 if success, otherwise an error occurred              */
 /*                                                                     */
 /***********************************************************************/
-int DECLARE(AutoLm) AutoLmInit(char* vendor, ui64 vendorId,
-                               char* product, ui64 productId, int mode,
-                               char* password, unsigned int pwdLength,
-                               int (*computer_id)(char*), char* infuraId)
+int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
+                               const char* product, ui64 productId,
+                               int mode, const char* password,
+                               ui32 pwdLength, int (*computer_id)(char*),
+                               const char* infuraId)
 {
-  char tmpstr[36];
   ui8 compid_octet[36];
-  unsigned int compidlen, i;
+  unsigned int compidlen;
+
+  if ((vendor == NULL) || (product == NULL) || (infuraId == NULL) ||
+      (password == NULL))
+    return otherLicenseError;
 
   strcpy(AutoLmOne.vendor, vendor);
   AutoLmOne.vendorlen = strlen(AutoLmOne.vendor);
@@ -495,10 +519,10 @@ int DECLARE(AutoLm) AutoLmInit(char* vendor, ui64 vendorId,
   AutoLmOne.productlen = strlen(AutoLmOne.product);
   AutoLmOne.productid = productId;
   AutoLmOne.blockchainValidate = validate_onchain;
-  AutoLmOne.infuraProductId = infuraId;
-  AutoLmOne.computer_id = computer_id;
-  if (AutoLmOne.computer_id == NULL)
-    AutoLmOne.computer_id = AutoLmMachineId;
+  strcpy(AutoLmOne.infuraProductId, infuraId);
+  AutoLmOne.getComputerId = computer_id;
+  if (AutoLmOne.getComputerId == NULL)
+    AutoLmOne.getComputerId = AutoLmMachineId;
 
   /*-------------------------------------------------------------------*/
   /* Set the authentication node; 1 - noAuth, 2 - MD5, 3 - SHA1        */
@@ -508,9 +532,9 @@ int DECLARE(AutoLm) AutoLmInit(char* vendor, ui64 vendorId,
   /*-------------------------------------------------------------------*/
   /* Get and convert the computer id returning if error.               */
   /*-------------------------------------------------------------------*/
-  compidlen = AutoLmOne.computer_id(tmpstr);
+  compidlen = AutoLmOne.getComputerId(AutoLmOne.computerId);
   if (compidlen > 0)
-    compidlen = AutoLmStringToHex(tmpstr, compid_octet);
+    compidlen = AutoLmStringToHex(AutoLmOne.computerId, compid_octet);
   if (compidlen <= 0)
     return compidInvalid;
 
@@ -529,8 +553,8 @@ int DECLARE(AutoLm) AutoLmInit(char* vendor, ui64 vendorId,
   /*-------------------------------------------------------------------*/
   /* Clear the password from the stack                                 */
   /*-------------------------------------------------------------------*/
-  for (i = 0; i < pwdLength; i++)
-    password[i] = '\0';
+//  for (i = 0; i < pwdLength; i++)
+//    password[i] = 0;
 
   return 0;
 }
@@ -546,7 +570,7 @@ int DECLARE(AutoLm) AutoLmInit(char* vendor, ui64 vendorId,
 /*     Returns: the immutable value of license, otherwise zero (0)     */
 /*                                                                     */
 /***********************************************************************/
-int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
+int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
                     time_t *exp_date, char* buyHashId, ui64 *resultValue)
 {
   FILE *pFILE;
@@ -583,7 +607,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
         /* Read and check the vendor name with the configured vendor   */
         /*-------------------------------------------------------------*/
         in_vendor = false;
-        strchr(tmp, ']')[0] = '\0';
+        strchr(tmp, ']')[0] = 0;
 
         if (strlen(tmp) <= 20)
           strcpy(loc_vendor, &(tmp[1]));
@@ -605,7 +629,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
         /* Make sure this isn't the last parameter                     */
         /*-------------------------------------------------------------*/
         if (strchr(tmpstr1, ' '))
-          strchr(tmpstr1, ' ')[0] = '\0';
+          strchr(tmpstr1, ' ')[0] = 0;
         else
           continue;
 
@@ -636,21 +660,23 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
         strcpy(tmpstr1, tmp);
         strcpy(tmpstr, tmp);
         if (strchr(tmpstr1, ' '))
-          strchr(tmpstr1, ' ')[0] = '\0';
+          strchr(tmpstr1, ' ')[0] = 0;
         else
           continue;
 
         /*-------------------------------------------------------------*/
-        /* If the id ends with blockchain check character.      */
+        /* If the id ends with blockchain check character.             */
         /*-------------------------------------------------------------*/
         if (tmpstr1[strlen(tmpstr1) - 1] == BLOCK_CHAIN_CHAR)
         {
+          // Remove the trailing colon (:)
           strcpy(loc_hostVendorProductIds, tmpstr1);
-          tmpstr1[strlen(tmpstr1) - 1] = '\0';
-//            bBlockchainCheckNeeded = true;
-          printf("requires block chain Validation()\n");
+          tmpstr1[strlen(tmpstr1) - 1] = 0;
+          PRINTF("requires block chain Validation()\n");
+
           strcpy(tmpstr1, &(strchr(tmpstr1, ':')[1]));
-          strchr(tmp, ':')[0] = '\0'; // remove entity id
+          strchr(tmp, ':')[0] = 0; // remove entity id
+
           /*-------------------------------------------------------------*/
           /* If the id length valid: app 2 for 0x and 32 for 16 hex.     */
           /*-------------------------------------------------------------*/
@@ -660,7 +686,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
             continue;
 
           strcpy(tmp, &(strchr(tmpstr1, ':')[1]));
-          strchr(tmpstr1, ':')[0] = '\0'; // remove product id
+          strchr(tmpstr1, ':')[0] = 0; // remove product id
           if (strlen(tmpstr1) <= 40)
             strcpy(loc_vendorId, tmpstr1);
           else
@@ -743,7 +769,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
         strcpy(tmpstr1, tmp);
         strcpy(tmpstr, tmp);
         if (strchr(tmpstr1, ' '))
-          strchr(tmpstr1, ' ')[0] = '\0';
+          strchr(tmpstr1, ' ')[0] = 0;
         if (AutoLmOne.mode == 3)
           authlen = 20;
         else
@@ -753,7 +779,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
         /* Force string alignment, disregard ^M and \n                 */
         /*-------------------------------------------------------------*/
         if (strlen(tmpstr1) > (size_t)authlen * 2 + 2)
-          tmpstr1[authlen * 2 + 2] = '\0';
+          tmpstr1[authlen * 2 + 2] = 0;
 
         /*-------------------------------------------------------------*/
         /* Return invalid if length greater max. SHA is 40 + 2         */
@@ -765,7 +791,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
             goto done;
         }
 
-        // Copy the hash are mark the application as parsed
+        // Copy the hash and mark the application as parsed
         strcpy(loc_hash, tmpstr1);
         app_parsed = true;
 
@@ -832,21 +858,15 @@ int DECLARE(AutoLm) AutoLmValidateLicense(char *filename,
 
     if (in_vendor && in_app && app_parsed && (rval == licenseValid))
     {
-      ui64 resValue;
-
-      printf("llEntityId = %llu, llProductId = %llu\n", loc_vendorid, loc_productid); // do blockchain validation
-      resValue = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid, loc_hash, AutoLmOne.infuraProductId, exp_date);
-      if (resultValue)
-        *resultValue = resValue;
-      if (resValue == 0)
+      PRINTF("llEntityId = %llu, llProductId = %llu\n", loc_vendorid, loc_productid); // do blockchain validation
+      rval = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid, loc_hash, AutoLmOne.infuraProductId, exp_date, resultValue);
+      if (rval == blockchainExpiredLicense)
       {
           strcpy(buyHashId, loc_hash);
-          printf("buyHashId-%s\n", buyHashId);
+          PRINTF("buyHashId-%s\n", buyHashId);
       }
-      // Otherwise the license is valid
-      else
-        return 0;
-      return expiredLicense;
+      // Otherwise the license is valid or some error
+      return rval;
     }
 
     return rval;
@@ -869,7 +889,8 @@ done:
 /*     Returns: 0 if success, otherwise an error occurred              */
 /*                                                                     */
 /***********************************************************************/
-int DECLARE(AutoLm) AutoLmHashLicense(char *appstr, char *computerid,
+int DECLARE(AutoLm) AutoLmHashLicense(const char *appstr,
+                                      const char *computerid,
                                       ui8 *hashresult)
 {
   char theMsg[120];
@@ -878,7 +899,7 @@ int DECLARE(AutoLm) AutoLmHashLicense(char *appstr, char *computerid,
   /*-------------------------------------------------------------------*/
   /* Create a long string with the license information                 */
   /*-------------------------------------------------------------------*/
-  theMsg[0] = '\0';
+  theMsg[0] = 0;
 
   /*-------------------------------------------------------------------*/
   /* Add the vendor name                                               */
@@ -915,7 +936,7 @@ int DECLARE(AutoLm) AutoLmHashLicense(char *appstr, char *computerid,
 /*     Returns: 0 if success, otherwise error code                     */
 /*                                                                     */
 /***********************************************************************/
-int DECLARE(AutoLm) AutoLmStringToHex(char *hexstring, ui8 *result)
+int DECLARE(AutoLm) AutoLmStringToHex(const char *hexstring, ui8 *result)
 {
   char tmpstr[80], s_tmp[80+2], s_tmp2[80];
   int i = 0, cnt = 0, tmpval;
@@ -942,7 +963,7 @@ int DECLARE(AutoLm) AutoLmStringToHex(char *hexstring, ui8 *result)
           if (strlen(tmpstr) == 0)
             break;
           strcpy(s_tmp, tmpstr);
-          s_tmp[2] = '\0';
+          s_tmp[2] = 0;
           strcpy(s_tmp2, s_tmp);
           sprintf(s_tmp,"0x%s", s_tmp2); /* add the 0x */
           sscanf(s_tmp, "%x", &tmpval);
@@ -965,26 +986,26 @@ int DECLARE(AutoLm) AutoLmStringToHex(char *hexstring, ui8 *result)
 /*     Returns: 0 if success, otherwise error code                     */
 /*                                                                     */
 /***********************************************************************/
-int DECLARE(AutoLm) AutoLmCreateLicense(char* filename)
+int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
 {
-  char infoString[200];
-  char hashtext[42];
+  char infoString[201];
+  char hashtext[42 + 1];
   ui8 hashstr[20];
   int i, hostidlen;
-	char hostidstr[136], tmpstr[86];
+  char hostidstr[136], tmpstr[86];
 
   // Check for configuration errors
   if ((filename == NULL) || (AutoLmOne.vendorid <= 0) ||
       (AutoLmOne.productid < 0) || (AutoLmOne.mode < 0))
     return -1;
 
-  hostidlen = AutoLmOne.computer_id(tmpstr);
+  hostidlen = (int)strlen(AutoLmOne.computerId);
   if (hostidlen > 0)
   {
     /*-------------------------------------------------------------------*/
     /* Add the vendor and the product id for immutable ecosystem         */
     /*-------------------------------------------------------------------*/
-    snprintf(hostidstr, 135, "%s:%lld:%lld:", tmpstr,
+    snprintf(hostidstr, 135, "%s:%lld:%lld:", AutoLmOne.computerId,
              AutoLmOne.vendorid, AutoLmOne.productid);
 	}
   else
@@ -1007,14 +1028,14 @@ int DECLARE(AutoLm) AutoLmCreateLicense(char* filename)
       {
         tmpstr[1] = tmpstr[0];
         tmpstr[0] = '0';
-        tmpstr[2] = '\0';
+        tmpstr[2] = 0;
       }
       strcat(hashtext, tmpstr);
     }
     if (filename)
     {
       FILE *pFILE = fopen(filename, "w");
-      infoString[0] = '\0';
+      infoString[0] = 0;
       if (pFILE)
       {
         /*-------------------------------------------------------------*/
@@ -1047,14 +1068,14 @@ int DECLARE(AutoLm) AutoLmCreateLicense(char* filename)
 /*                                                                     */
 /***********************************************************************/
 void DECLARE(AutoLm) AutoLmPwdToKeyMd5(
-  char *password,  /* IN */
+  const char *password,  /* IN */
   int passwordlen, /* IN */
   ui8 *locstr,   /* IN  - pointer to unique id  */
   ui32 locstrlen,  /* IN  - length of id */
   ui8 *key)      /* OUT - pointer to caller 16-octet buffer */
 {
   Md5Ctx  MD;
-  ui8    password_buf[64];
+  ui8     password_buf[64];
   ui32    password_index = 0;
   ui32    count = 0, i;
 
@@ -1110,7 +1131,7 @@ void DECLARE(AutoLm) AutoLmPwdToKeyMd5(
 /*                                                                     */
 /***********************************************************************/
 void DECLARE(AutoLm) AutoLmPwdToKeySha(
-  char *password,  /* IN */
+  const char *password,  /* IN */
   int passwordlen, /* IN */
   ui8 *locstr,   /* IN  - pointer to unique ID  */
   ui32 locstrlen,  /* IN  - length of unique ID */

@@ -3,6 +3,7 @@
 /*   Module:  autolm.h                                                 */
 /*   Version: 2020.0                                                   */
 /*   Purpose: Header file for AutoLM, the Automatic License Manager    */
+/*            utilizing the Immutable Ecosystem                        */
 /*                                                                     */
 /*---------------------------------------------------------------------*/
 /*                                                                     */
@@ -42,13 +43,19 @@
 /*
  * Build options
  */
+#define AUTOLM_DEBUG           0 // 1 to Enable debug output
+#if AUTOLM_DEBUG
+#define   PRINTF               printf
+#else
+#define   PRINTF(...)          
+#endif
+
 // Ethereum Blockchain Connectivity Options
 #define CURL_HOST_URL          ROPSTEN_INFURA_URL
 #define ADD_BLOCK_CHAIN_CHECK  1  /* append blockchain special char */
 #define BLOCK_CHAIN_CHAR       ':' /* use colon as special char */
 #define ROPSTEN_INFURA_URL     "https://ropsten.infura.io/v3/"
 #define LOCAL_GANACHE_URL      "http://localhost:8545/"
-
 
 // Immutable Ecosystem
 #define LICENSE_STATUS_ID      "0x9277d3d6" // Keccak256 ("licenseStatus(uint256, uint256, uint256)") = 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
@@ -84,8 +91,9 @@ enum AutoLmResponse
   dongleNotFound,
   blockchainVendoridNoMatch,
   blockchainProductidNoMatch,
-  blockchainExpiredLicense,
+  blockchainExpiredLicense, /* 20 */
   blockchainAuthenticationFailed,
+  curlPerformFailed,
   otherLicenseError
 };
 
@@ -102,9 +110,10 @@ typedef struct AutoLmConfig
   ui64 productid;
   ui8 password[21];
   int mode;
-  ui64 (*blockchainValidate)(ui64, ui64, char*, char*, time_t*);
-  int (*computer_id)(char *);
-  char* infuraProductId;
+  int (*blockchainValidate)(ui64, ui64, char*, char*, time_t*, ui64*);
+  int (*getComputerId)(char *);
+  char computerId[35];
+  char infuraProductId[35];
 } AutoLmConfig;
 
 /***********************************************************************/
@@ -125,30 +134,30 @@ public:
   AutoLm();
   ~AutoLm();
 
-  int AutoLmInit(char* vendor, ui64 vendorId, char* product,
-                    ui64 productId, int mode, char* password, 
-                    unsigned int pwdLength, int (*computer_id)(char*),
-                    char* infuraId);
+  int AutoLmInit(const char* vendor, ui64 vendorId, const char* product,
+                 ui64 productId, int mode, const char* password,
+                 ui32 pwdLength, int (*computer_id)(char*),
+                 const char* infuraId);
 
-  int AutoLmValidateLicense(char* filename, time_t *exp_date,
+  int AutoLmValidateLicense(const char* filename, time_t *exp_date,
                             char* buyActivationId, ui64 *resultValue);
-  int AutoLmCreateLicense(char* filename);
+  int AutoLmCreateLicense(const char* filename);
 
   /*********************************************************************/
   /* Private  declarations                                             */
   /*********************************************************************/
 private:
-  int AutoLmStringToHex(char *hexstring, ui8 *result);
-  int AutoLmHashLicense(char *appstr, char *computerid,
+  int AutoLmStringToHex(const char *hexstring, ui8 *result);
+  int AutoLmHashLicense(const char *appstr, const char *computerid,
                            ui8 *hashresult);
   void AutoLmPwdToKeyMd5(
-     char *password,  /* IN */
+     const char *password,  /* IN */
      int passwordlen, /* IN */
      ui8 *locstr,   /* IN  - pointer to unique ID  */
      ui32 locstrlen,  /* IN  - length of unique ID */
      ui8 *key);     /* OUT - pointer to resulting 16-byte buffer */
   void AutoLmPwdToKeySha(
-     char *password,  /* IN */
+     const char *password,  /* IN */
      int passwordlen, /* IN */
      ui8 *locstr,   /* IN  - pointer to unique ID  */
      ui32 locstrlen,  /* IN  - length of unique ID */
