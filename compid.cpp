@@ -172,14 +172,14 @@ int AutoLmMachineId(char *comp_id)
 
 #ifdef _STANDALONE
 // To compile with GCC/MSYS2
-//gcc -o compid.exe -DWIN32 compid.cpp -mwindows -lstdc++ -ladvapi32
+//gcc -o compid.exe -D_WINDOWS -D_STANDALONE compid.cpp -mwindows -lstdc++ -ladvapi32
 // To compile with GCC
 //gcc -o compid.exe compid.cpp -lstdc++
 int main()
 {
   char tmp[128];
 
-  if (imtAutoLmMachineId(tmp) > 0)
+  if (AutoLmMachineId(tmp) > 0)
     puts(tmp);
 }
 #endif

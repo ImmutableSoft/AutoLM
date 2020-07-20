@@ -210,7 +210,8 @@ static ui64 unpack_param_value(char* param)
 /*     Returns: the unpacked ui64 bit value of the parameter           */
 /*                                                                     */
 /***********************************************************************/
-static int parse_json_result(const char* jsonResult, time_t* exp_dat, ui64* ret_value)
+static int parse_json_result(const char* jsonResult, time_t* exp_dat,
+                             ui64* ret_value)
 {
   size_t cnt = 0;
   int ret = 0;
@@ -247,7 +248,8 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat, ui64* ret_
           PRINTF("param[%d] - %s\n", i, s_tmp);
           llParams[i] = unpack_param_value(s_tmp);
         }
-        if ((llParams[0] == 0) && (llParams[1] == 0) && (llParams[2] == 0))
+        if ((llParams[0] == 0) && (llParams[1] == 0) &&
+            (llParams[2] == 0))
         {
            if (exp_dat)
              *exp_dat = 0;
@@ -274,20 +276,21 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat, ui64* ret_
       }
       else
       {
-        PRINTF("json params count not valid count = %d\n", nParamsCount);
-        ret = blockchainAuthenticationFailed; // xxx maybe return other error
+        PRINTF("json params count not valid count = %d\n",
+               nParamsCount);
+        ret = blockchainAuthenticationFailed;
       }
     }
     else
     {
       PRINTF("json params not found returned 0x\n");
-      ret = blockchainAuthenticationFailed; // xxx maybe return other error
+      ret = blockchainAuthenticationFailed;
     }
   }
   else
   {
     PRINTF("json params not found returned\n");
-    ret = blockchainAuthenticationFailed; // xxx maybe return other error
+    ret = blockchainAuthenticationFailed;
   }
   return ret;
 }
@@ -313,7 +316,7 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
   if(resultSize + realsize > MAX_SIZE_JSON_RESPONSE)
   {
     /* out of memory! */ 
-    PRINTF("not enough memory (try increasing MAX_SIZE_JSON_RESPONSE)\n");
+    PRINTF("not enough memory (increase MAX_SIZE_JSON_RESPONSE)\n");
     return 0;
   }
  
@@ -349,19 +352,20 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
   CURL *easy = curl_easy_init();
 
   /* send all data to this function  */
-  curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION, curl_write_memory_callback);
+  curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION,
+                   curl_write_memory_callback);
  
   /* we pass our 'chunk' struct to the callback function */
   curl_easy_setopt(easy, CURLOPT_WRITEDATA, (void *)curlResponseMemory);
  
-  // You can choose between 1L and 0L (enable verbose video log or disable)
+  // You can choose between 1L and 0L (enable verbose log or disable)
 #if AUTOLM_DEBUG
   curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
 #else
   curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
 #endif
   curl_easy_setopt(easy, CURLOPT_HEADER, 1L);
-  curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); // what is it for ???
+  curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); //what ???
 
   // Let's create an object which will contain a list of headers.
   PRINTF("jsonData = %s\n", jsonData);
@@ -377,7 +381,8 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
   /* Post json data */
   curl_easy_setopt(easy, CURLOPT_POSTFIELDS, jsonData);
   unsigned int jsonDataLength = (int)strlen(jsonData);
-  PRINTF("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n", jsonDataLength);
+  PRINTF("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n",
+         jsonDataLength);
   /* set the size of the postfields data */
   curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, jsonDataLength);
 
@@ -436,7 +441,7 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
 int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
                      char* infuraId, time_t* exp_date, ui64* ret_value)
 {
-  char jsonParams[(4 * 64) + 10 + 1]; // 4x 256 values + 0x34310e8b 10 bytes functionId + 1
+  char jsonParams[(4 * 64) + 10 + 1];// 4x 256 values + 10 functionId + 1
   char funcId[] = LICENSE_STATUS_ID;
 
   // Encode the function parameters as JSON paramters
@@ -444,7 +449,8 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   PRINTF("%s\n", jsonParams);
 
   char jsonDataPrefixBuf[256];
-  const char* jsonDataPrefix = "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
+  const char* jsonDataPrefix =
+    "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
 
   sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_LICENSE_CONTRACT);
   PRINTF("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
@@ -470,7 +476,8 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   size_t nDataLength = nLengthPrefix + nLengthParams + nLengthSuffix;
   jsonDataAll[nDataLength] = 0;
   PRINTF("jsonData = %s\n", jsonDataAll);
-  return autolm_read_activation(infuraId, jsonDataAll, exp_date, ret_value);
+  return autolm_read_activation(infuraId, jsonDataAll, exp_date,
+                                ret_value);
 }
 
 #ifdef __cplusplus
@@ -576,7 +583,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
   FILE *pFILE;
   char tmp[170],tmpstr[170], tmpstr1[170];
   char loc_hostVendorProductIds[170];
-  int nBuffersSize = 170; // vendorId and productId can be 20 chars long max value - 18446744073709551615
+  int nBuffersSize = 170; // vendorId/productId are 20 chars max length
   char loc_hash[44]; /* hash is 20 octets for SHA1 and 16 for MD5 */
                      /* as a string it could be up to 44 characters */
   char loc_hostid[120], loc_vendor[20], loc_app[30];
@@ -677,9 +684,9 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           strcpy(tmpstr1, &(strchr(tmpstr1, ':')[1]));
           strchr(tmp, ':')[0] = 0; // remove entity id
 
-          /*-------------------------------------------------------------*/
-          /* If the id length valid: app 2 for 0x and 32 for 16 hex.     */
-          /*-------------------------------------------------------------*/
+          /*-----------------------------------------------------------*/
+          /* If the id length valid: app 2 for 0x and 32 for 16 hex.   */
+          /*-----------------------------------------------------------*/
           if (strlen(tmp) <= 34)
               strcpy(loc_hostid, tmp);
           else
@@ -858,8 +865,12 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
 
     if (in_vendor && in_app && app_parsed && (rval == licenseValid))
     {
-      PRINTF("llEntityId = %llu, llProductId = %llu\n", loc_vendorid, loc_productid); // do blockchain validation
-      rval = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid, loc_hash, AutoLmOne.infuraProductId, exp_date, resultValue);
+      PRINTF("llEntityId = %llu, llProductId = %llu\n", loc_vendorid,
+             loc_productid); // do blockchain validation
+      rval = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid,
+                                          loc_hash,
+                                          AutoLmOne.infuraProductId,
+                                          exp_date, resultValue);
       if (rval == blockchainExpiredLicense)
       {
           strcpy(buyHashId, loc_hash);
@@ -1002,10 +1013,10 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
   hostidlen = (int)strlen(AutoLmOne.computerId);
   if (hostidlen > 0)
   {
-    /*-------------------------------------------------------------------*/
-    /* Add the vendor and the product id for immutable ecosystem         */
-    /*-------------------------------------------------------------------*/
-    snprintf(hostidstr, 135, "%s:%lld:%lld:", AutoLmOne.computerId,
+    /*-----------------------------------------------------------------*/
+    /* Add the vendor and the product id for immutable ecosystem       */
+    /*-----------------------------------------------------------------*/
+    snprintf(hostidstr, 135, "%s:%llu:%llu:", AutoLmOne.computerId,
              AutoLmOne.vendorid, AutoLmOne.productid);
 	}
   else
@@ -1058,7 +1069,7 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
 }
 
 /***********************************************************************/
-/* AutoLmPwdToKeyMd5: localize the password using MD5                 */
+/* AutoLmPwdToKeyMd5: localize the password using MD5                  */
 /*                                                                     */
 /*      Inputs: password = the password                                */
 /*              passwordlen = the password length                      */
@@ -1121,7 +1132,7 @@ void DECLARE(AutoLm) AutoLmPwdToKeyMd5(
 }
 
 /***********************************************************************/
-/* AutoLmPwdToKeySha: localize the password using SHA                 */
+/* AutoLmPwdToKeySha: localize the password using SHA                  */
 /*                                                                     */
 /*      Inputs: password = the password                                */
 /*              passwordlen = the password length                      */
@@ -1185,7 +1196,7 @@ void DECLARE(AutoLm) AutoLmPwdToKeySha(
 }
 
 /***********************************************************************/
-/* AutoLmCalculateHash: Calculate the HMAC auth hash of a string    */
+/* AutoLmCalculateHash: Calculate the HMAC auth hash of a string       */
 /*                                                                     */
 /*      Inputs: type = the type of hash, 2 is MD5, 3 is SHA            */
 /*              wholeMsg = the string/message to calculate hash of     */
