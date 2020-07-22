@@ -37,6 +37,17 @@
 
 #include "autolm.h"
 
+/***********************************************************************/
+/*        main: Main application entry point                           */
+/*                                                                     */
+/*      Inputs: argc = the number of command line parameters (8 to 9)  */
+/*              argv = array of individual command line parameters     */
+/*                                                                     */
+/*     Returns: Zero on successful license lookup, otherwise error     */
+/*             license value output to stdio after querying blockchain */
+/*             Output of zero is not valid, greater than zero is valid */
+/*                                                                     */
+/***********************************************************************/
 int main(int argc, const char **argv)
 {
   AutoLm *lm = new AutoLm();

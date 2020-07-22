@@ -40,13 +40,13 @@
 /***********************************************************************/
 /* OverrideMachineId: Save and return the machine id                   */
 /*                                                                     */
-/*      Inputs: comp_id = OUT the dbus machine-id from Unix            */
+/*      Inputs: comp_id = IN/OUT the machine-id from User              */
+/*                          First call initializes machine-id          */
+/*                          Subsequent calls return machine-id         */
 /*                                                                     */
 /*     Returns: length of OUT comp_id if success, otherwise error      */
 /*                                                                     */
 /***********************************************************************/
-// Get the MachineId in string, hexidecimal format
-//   OUT: comp_id array size must be 35 bytes or larger
 int OverrideMachineId(char* comp_id)
 {
   static char ComputerId[64] = "";
@@ -58,6 +58,15 @@ int OverrideMachineId(char* comp_id)
   return (int)strlen(ComputerId);
 }
 
+/***********************************************************************/
+/*        main: Main application entry point                           */
+/*                                                                     */
+/*      Inputs: argc = the number of command line parameters (7 to 9)  */
+/*              argv = array of individual command line parameters     */
+/*                                                                     */
+/*     Returns: Zero on successful license creation, otherwise error   */
+/*                                                                     */
+/***********************************************************************/
 int main(int argc, const char **argv)
 {
   AutoLm *lm = new AutoLm();

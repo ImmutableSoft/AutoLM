@@ -56,6 +56,12 @@ cd curl
 
 ### Visual Studio 2019
 
+To build libcurl for both x86 and x64 platforms, please
+complete both sections below. If you only need support for
+one platform then only that section needs to be completed.
+If you do not complete both sections below then not all
+build configurations for AutoLM solution will link correctly.
+
 ## x86
 From the Start (bottom left Windows button) search field,
 open the application "Developer Command Prompt for VS 2019".
@@ -87,6 +93,7 @@ buildconf.bat
 cd winbuild
 nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
 ```
+
 This will create libcurl_a.lib in the folder
 curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib
 
@@ -117,7 +124,7 @@ it is time to build AutoLM.
 ## Building with Visual Studio
 
 Open the solution file AutoLM.sln, select the build type (x86
-or x64) and rebuild the solution.
+or x64) and configuration (Debug or Release) and rebuild the solution.
 
 ## Building for Unix
 
@@ -172,48 +179,72 @@ noLicenseFound error, create a local activation with
 AutoLmCreateLicense(). Then call AutoLmValidateLicense()
 again.
 
-
 ```
+int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
+{
+    char* binaryPathLinux = (char*)"/usr/bin/google-chrome";
+    char* binaryPathWin = (char*)"chrome.exe";
+    char bufLink[200];
+    char bufLaunchWin[250];
+    char bufLaunchLinux[250];
+    sprintf(bufLink, "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=1",
+        vendorIdStr, productIdStr, buyUniqueId);
+    printf("bufLink - '%s'\n", bufLink);
+
+    sprintf(bufLaunchWin, "start chrome.exe \"%s\"", bufLink);
+    printf("bufLaunchWin - '%s'\n", bufLaunchWin);
+    int n = 0;
+#ifndef _WIN32
+    sprintf(bufLaunchLinux, "/usr/bin/google-chrome \"%s\"", bufLink);
+    printf("lanching '%s'\n", bufLaunchLinux);
+    n = system(bufLaunchLinux);
+    printf("n = %d\n", n);
+#else
+    printf("lanching '%s'\n", bufLaunchWin);
+    n = system(bufLaunchWin);
+#endif
+    printf("n = %d\n", n);
+
+    return n;
+}
+
+...
+int main()
+{
+  ...
+
   AutoLM autoLM = new AutoLm();
   if(autoLM)
   {
     const char* vendorName = "MyEntity"; //From Immutable Ecosystem
-    ui64 vendorId = 3; // From Immutable Ecosystem
+    ui64 vendorId = 3; // From Immutable Ecosystem, static per application
     char vendorIdStr[21];
     sprintf(vendorIdStr, "%llu", vendorId);
     const char* product = "MyApplication";
-    ui64 productId = 0; // From Immutable Ecosystem
+    ui64 productId = 0; // From Immutable Ecosystem, static per application
     char productIdStr[21];
     sprintf(productIdStr, "%llu", productId);
 
     char vendorPassword[20 + 1];
-    unsigned int nVendorPwdLength = 10; // init vendor password length
-    vendorPassword[0] = 'M';
-    vendorPassword[1] = 'y';
-    vendorPassword[2] = 'P';
-    vendorPassword[3] = 'a';
-    vendorPassword[4] = 's';
-    vendorPassword[5] = 's';
-    vendorPassword[6] = 'w';
-    vendorPassword[7] = '\0'; // Example of escape character in password
-    vendorPassword[8] = 'r';
-    vendorPassword[9] = 'd';
-    vendorPassword[10] = '\0';
-    char buyHashId[44];
+    unsigned int nVendorPwdLength;
+    nVendorPwdLength = autoLM->AutoLmPwdStringToBytes("MyPassw\\0rd", vendorPassword);
+
+    char buyHashId[44] = "";
     const char* infuraId = INFURA_PROJECT_ID; // From https://infura.io
     time_t exp_date = 0;
 	  ui64 resultingValue;
+    int licenseStatus;
 
     autoLM->AutoLmInit(vendorName, vendorId, product, productId,
 	                     3, vendorPassword, nVendorPwdLength, NULL,
                        infuraId);
     for (;;)
     {
-      switch(easyLMStatus = autoLM->AutoLmValidateLicense(lic_file,
+      switch(licenseStatus = autoLM->AutoLmValidateLicense(lic_file,
                                 &exp_date, buyHashId, &resultingValue))
       {
         case licenseValid:
-        ...
+          break;
 			  case noLicenseFile:
 			  {
 					  int created = autoLM->AutoLmCreateLicense(lic_file);
@@ -226,23 +257,41 @@ again.
 					    sprintf(result, "%s\nBlockchain license creation failed %d", result, created);
 			  }
         case blockchainExpiredLicense:
-      			// launch browser to purchse from Immutable
-            //launchBuyDialog(vendorIdStr, productIdStr, buyHashId);
+      			// launch browser to purchase from Immutable
+            launchBuyDialog(vendorIdStr, productIdStr, buyHashId);
+            break;
+        default:
+          break;
       }
+      break;
     }
-    break;
 
+    // If license is not valid then exit the application
+    if (licenseStatus != licenseValid)
+    {
+      // Not activated, close the application
+      printf("Activation for %s failed with %d\n", buyHashId, licenseStatus);
+      return -1;
+    }
+  }
+  ...
+}
 ```
 
-The following command line tools are created when AutoLM
-is built; 'compid', 'activate' and 'validate'. Only
-'activate' and 'validate' are required. The 'compid' is
+To aid integration with scripting languages (Python, Perl, Tcl,
+etc.), the following command line tools are created when AutoLM
+is built; 'compid', 'activate' and 'validate'. The 'compid' is
 used by an application for troubleshooting or when a server
-call is required to 'activate'. 'activate' creates a local
-license (file) using the end users compid and the application
-secret. The 'validate' call requires a previously created
-local license (file) and uses libcurl to validate the license
-on the Ethereum network.
+call is required to 'activate' as the computer id must be
+passed from the PC executing the software to the server creating
+the license file. The 'activate' command creates a local
+license (file) using the detected OS/PC computer id and the
+application details (names, ids, secret). The 'validate' call
+requires a previously created local license (file) and uses
+libcurl to validate the license on the Ethereum network. Validate
+returns a string representing the license activation value. Any
+number greater than zero is active, any number greater than one (1)
+is application specific (ie. an application feature or item).
 
 # AutoLM Features
 
@@ -257,14 +306,17 @@ global unique and immutable OS identifier is used to create
 system specific software license activations.
 
 To encourage customization of this step, AutoLM supports integration
-with any application defined computer id that returns hex string format.
-Use an application specific and unique method or chain together
-user or system hardware information with the default to create a
-more specific activation identifier. It is perfectly acceptable
-that different applications create different identifiers, but
-by default they will be identical as the requirement is that
-they be unique per PC/OS. After compilation the computer id for
-the compiled system can be retrieved with the compid binary.
+with any application defined computer id that returns a hex string
+format equal to or less than 35 bytes long (32 byte value, 2 for
+hex prefix '0x' and one for terminating character).
+
+Using an application specific and unique computer id algorithm,
+or chaining together user or additional system hardware information
+with the default to create a more specific activation identifier.
+It is perfectly acceptable that different applications create different
+identifiers, but by default they will be identical as the requirement
+is that the ID be unique per PC/OS, not application. After compilation
+the computer id for the OS/PC can be retrieved with the CompId binary.
 
 ```
 $ ./compid
@@ -291,6 +343,13 @@ before in can be considered globally active. This blockchain
 activation step can thus require payment to the software creator
 through the transfer of crypto-currency (ETH).
 
+An example using the 'activate' command line tool to create a
+license activation file is below.
+
+```
+./activate Mibtonix 3 Mibpeek 0 3 Passw\\0rd 0x5adb663c6fbb41a3a43fc74319696c63 ./license.elm
+```
+
 ## Secure Activation Validation
 
 The third action of the library validates a local activation
@@ -304,17 +363,30 @@ features can be available for purchase from the Immutable
 Ecosystem and are distinguished by their Activation
 Value. At no time after purchase can this Value be changed.
 
+An example using the 'validate' command line tool to verify a
+license activation file with the Ethereum database is below.
+
+```
+./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
+1
+```
+
+Note the value above returns one (1) indicating the license is valid. If
+the 'validate' command returns zero (0) then the activation is not
+valid on the Ethereum database indicating a purchase (or activation
+Move) from the Immutable Ecosystem is required.
+
 # AutoLM Application Integration Notes
 
 If found to not be valid on the Ecosystem, the application
 should consider the installation unlicensed and report the
 product identifier to the user and/or redirect the user
 to a browser/tab into the Immutable Ecosystem to purchase
-the activation. Once the user purchases a new activation
-through the Immutable Ecosystem the check will return valid
-and the application logic should unlock the application
-features. If the user already has an activation they
-can navigate to the Immutable Activations page and update
-their activation identifier to the new value. Applications
-with many features may wish to consider a bulk migration
-feature.
+the activation (see launchBuyDialog() above). Once the user
+purchases a new activation through the Immutable Ecosystem
+the check will return valid and the application logic should
+unlock the application feature(s). If the user already has an
+activation they can navigate to the Immutable Activations page
+and update their activation identifier to the new value.
+Applications with many features may wish to consider a bulk
+migration feature.
