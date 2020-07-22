@@ -144,10 +144,12 @@ public:
                             char* buyActivationId, ui64 *resultValue);
   int AutoLmCreateLicense(const char* filename);
 
+  int AutoLmPwdStringToBytes(const char* password, char* byteResult);
+
+private:
   /*********************************************************************/
   /* Private  declarations                                             */
   /*********************************************************************/
-private:
   int AutoLmStringToHex(const char *hexstring, ui8 *result);
   int AutoLmHashLicense(const char *appstr, const char *computerid,
                         ui8 *hashresult);

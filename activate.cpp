@@ -61,9 +61,13 @@ int OverrideMachineId(char* comp_id)
 int main(int argc, const char **argv)
 {
   AutoLm *lm = new AutoLm();
+  char vendorPassword[20 + 1];
+  int nVendorPwdLength;
 
-//(char *vendorStr, char* appStr, 
-//    char* hexcompid, char *password, int mode, char* filename)
+  const char* strVendorPassword = argv[6];
+  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
+  int res;
+
   // Entity, EntityId, Application, AppId, Mode, Password, CompId, Filename
   if ((argc < 7) || (argc > 9))
   {
@@ -86,84 +90,23 @@ int main(int argc, const char **argv)
     return -1;
   }
 
+  // Assign override machine id to force CompId from parameter list
   if ((argc >= 8) && ((argv[7][0] == '0') && (argv[7][1] == 'x')))
     OverrideMachineId((char *)argv[7]);
 
-  char vendorPassword[20 + 1];
-  int nVendorPwdLength = 10; // init vendor password length
-
-  const char* strVendorPassword = argv[6];
-  int nVendorPasswordStrLength = strlen(strVendorPassword);
+  // Return error if password is to long
   if (nVendorPasswordStrLength > 20)
   {
-    printf("vendorPassword argument '%s' length is %d, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
-    return 1;
+    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
+    return -1;
   }
+
+  // Otherwise convert escape chars in password \char to char hex value
   else
-  {
-    //convert escape chars in password \char to char hex value
-    int j = 0;
-    int nPwdLength = 0;
-    for (int i = 0; i < nVendorPasswordStrLength; i++)
-    {
-      if (strVendorPassword[i] != '\\')
-      {
-        vendorPassword[j++] = strVendorPassword[i];
-      }
-      else
-      {
-        i++;
-        if (isdigit(strVendorPassword[i]))
-        {
-          vendorPassword[j++] = char(strVendorPassword[i] - 0x30); // 0x30 - 0
-        }
-        else if (isxdigit(strVendorPassword[i]))
-        {
-          if (isupper(strVendorPassword[i]))
-          {
-            vendorPassword[j++] = char(strVendorPassword[i] - 0x41 + 10); // 0x65 - A
-          }
-          else
-          {
-            vendorPassword[j++] = char(strVendorPassword[i] - 0x61 + 10); // 0x61 - a
-          }
-        }
-        else
-        {
-          printf("vendorPassword char is not valid decimal or hex number - '%c'\n", strVendorPassword[i]);
-          return 1;
-        }
-      }
-      nPwdLength++;
-    }
-    nVendorPwdLength = nPwdLength;
-  }
-  printf("vendorPassword - '%s', vendorPwdLength = %d\n", strVendorPassword, nVendorPasswordStrLength);
+    nVendorPwdLength = lm->AutoLmPwdStringToBytes(strVendorPassword, vendorPassword);
 
-  printf("vendorPassword - [");
-  for (int i = 0; i < nVendorPwdLength; i++)
-  {
-    if (isalpha(vendorPassword[i]))
-    {
-      printf("%c,", vendorPassword[i]);
-    }
-    else if (vendorPassword[i] < 10)
-    {
-      printf("\\%c,", vendorPassword[i] + 0x30);
-    }
-    else
-    {
-      printf("\\%c,", vendorPassword[i] - 10 + 0x41);
-    }
-  }
-  printf("], vendorPwdLength = %d\n", nVendorPwdLength);
-  if (nVendorPwdLength < 10)
-  {
-    printf("vendor password length = %d. Needs to be 10 to 20 characters long\n", nVendorPwdLength);
-    return 1;
-  }
+  // Initialize the AutoLM class with the passed parameters
 
-  int res;
   // If computer id passed, use instead of local OS/PC
   if ((argc >= 8) && ((argv[7][0] == '0') && (argv[7][1] == 'x')))
   {
@@ -177,12 +120,23 @@ int main(int argc, const char **argv)
     res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
                   vendorPassword, nVendorPwdLength, NULL, NULL);
   }
-  printf(" %d Creating license file...", res);
-  if (argc == 9)
-    res = lm->AutoLmCreateLicense(argv[8]);
-  else if ((argc == 8) && ((argv[7][0] != '0') && (argv[7][1] != 'x')))
-    res = lm->AutoLmCreateLicense(argv[7]);
+
+  // If initialization success, create the license file
+  if (res == 0)
+  {
+    PRINTF(" %d Creating license file...", res);
+    if (argc == 9)
+      res = lm->AutoLmCreateLicense(argv[8]);
+    else if ((argc == 8) && ((argv[7][0] != '0') && (argv[7][1] != 'x')))
+      res = lm->AutoLmCreateLicense(argv[7]);
+    else
+      res = lm->AutoLmCreateLicense("./license.elm");
+    PRINTF("AutoLmCreateLicense result %d\n", res);
+    return res;
+  }
+
+  // Otherwise, initialization failed, return error
   else
-    res = lm->AutoLmCreateLicense("./license.elm");
-  printf("  created! %d\n", res);
+    PRINTF("Failed to initialize AutoLm %d\n", res);
+  return -1;
 }

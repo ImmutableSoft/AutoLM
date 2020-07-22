@@ -571,12 +571,6 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   else
     return authenticationFailed;
 
-  /*-------------------------------------------------------------------*/
-  /* Clear the password from the stack                                 */
-  /*-------------------------------------------------------------------*/
-//  for (i = 0; i < pwdLength; i++)
-//    password[i] = 0;
-
   return 0;
 }
 
@@ -1092,6 +1086,98 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
     return -4;
   }
   return 0;
+}
+
+/***********************************************************************/
+/* AutoLmPwdStringToBytes: Convert escape characters to byte values    */
+/*                                                                     */
+/*       Input: password = the password string array                   */
+/*      Output: byteResult = the resulting byte array                  */
+/*                                                                     */
+/*     Returns: The byte buffer result length                          */
+/*                                                                     */
+/***********************************************************************/
+int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
+                                           char *byteResult)
+{
+//  char vendorPassword[20 + 1];
+  int nVendorPwdLength = 10; // init vendor password length
+
+  const char* strVendorPassword = password;
+  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
+  if (nVendorPasswordStrLength > 20)
+  {
+    printf("vendorPassword '%s' length %zd, max length is 20\n",
+           strVendorPassword, nVendorPasswordStrLength);
+    return -1;
+  }
+  else
+  {
+    //convert escape chars in password \char to char hex value
+    int j = 0;
+    int nPwdLength = 0;
+    for (int i = 0; i < (int)nVendorPasswordStrLength; i++)
+    {
+      if (strVendorPassword[i] != '\\')
+      {
+        byteResult[j++] = strVendorPassword[i];
+      }
+      else
+      {
+        i++;
+        if (isdigit(strVendorPassword[i]))
+        {
+          byteResult[j++] = char(strVendorPassword[i] - 0x30);// 0x30 - 0
+        }
+        else if (isxdigit(strVendorPassword[i]))
+        {
+          if (isupper(strVendorPassword[i]))
+          {
+            byteResult[j++] = char(strVendorPassword[i] - 0x41 + 10); // 0x65 - A
+          }
+          else
+          {
+            byteResult[j++] = char(strVendorPassword[i] - 0x61 + 10); // 0x61 - a
+          }
+        }
+        else
+        {
+          printf("vendorPassword char not valid decimal or hex number - '%c'\n",
+            strVendorPassword[i]);
+          return -1;
+        }
+      }
+      nPwdLength++;
+    }
+    nVendorPwdLength = nPwdLength;
+  }
+  PRINTF("vendorPassword - '%s', vendorPwdLength = %d\n", strVendorPassword,
+         nVendorPasswordStrLength);
+
+  PRINTF("vendorPassword - [");
+  for (int i = 0; i < nVendorPwdLength; i++)
+  {
+    if (isalpha(byteResult[i]))
+    {
+      PRINTF("%c,", byteResult[i]);
+    }
+    else if (byteResult[i] < 10)
+    {
+      PRINTF("\\%c,", byteResult[i] + 0x30);
+    }
+    else
+    {
+      PRINTF("\\%c,", byteResult[i] - 10 + 0x41);
+    }
+  }
+  PRINTF("], vendorPwdLength = %d\n", nVendorPwdLength);
+  if (nVendorPwdLength < 10)
+  {
+    printf("vendor password length = %d. Must be 10 to 20 characters\n",
+           nVendorPwdLength);
+    return -1;
+  }
+  return nVendorPwdLength;
 }
 
 /***********************************************************************/

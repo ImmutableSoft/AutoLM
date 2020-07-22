@@ -40,9 +40,13 @@
 int main(int argc, const char **argv)
 {
   AutoLm *lm = new AutoLm();
+  char vendorPassword[20 + 1];
+  int nVendorPwdLength;
+  int res;
 
-//(char *vendorStr, char* appStr, 
-//    char* hexcompid, char *password, int mode, char* filename)
+  const char* strVendorPassword = argv[6];
+  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
+
   // Entity, EntityId, Application, AppId, Mode, Password, CompId, Filename
   if ((argc < 8) || (argc > 9))
   {
@@ -65,84 +69,22 @@ int main(int argc, const char **argv)
     return -1;
   }
 
-  char vendorPassword[20 + 1];
-  int nVendorPwdLength = 10; // init vendor password length
-
-  const char* strVendorPassword = argv[6];
-  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
+  // Return error if password is to long
   if (nVendorPasswordStrLength > 20)
   {
     printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
-    return 1;
+    return -1;
   }
+
+  // Otherwise convert escape chars in password \char to char hex value
   else
-  {
-    //convert escape chars in password \char to char hex value
-    int j = 0;
-    int nPwdLength = 0;
-    for (int i = 0; i < (int)nVendorPasswordStrLength; i++)
-    {
-      if (strVendorPassword[i] != '\\')
-      {
-        vendorPassword[j++] = strVendorPassword[i];
-      }
-      else
-      {
-        i++;
-        if (isdigit(strVendorPassword[i]))
-        {
-          vendorPassword[j++] = char(strVendorPassword[i] - 0x30); // 0x30 - 0
-        }
-        else if (isxdigit(strVendorPassword[i]))
-        {
-          if (isupper(strVendorPassword[i]))
-          {
-            vendorPassword[j++] = char(strVendorPassword[i] - 0x41 + 10); // 0x65 - A
-          }
-          else
-          {
-            vendorPassword[j++] = char(strVendorPassword[i] - 0x61 + 10); // 0x61 - a
-          }
-        }
-        else
-        {
-          printf("vendorPassword char is not valid decimal or hex number - '%c'\n", strVendorPassword[i]);
-          return 1;
-        }
-      }
-      nPwdLength++;
-    }
-    nVendorPwdLength = nPwdLength;
-  }
-  PRINTF("vendorPassword - '%s', vendorPwdLength = %d\n", strVendorPassword, nVendorPasswordStrLength);
+    nVendorPwdLength = lm->AutoLmPwdStringToBytes(strVendorPassword, vendorPassword);
 
-  PRINTF("vendorPassword - [");
-  for (int i = 0; i < nVendorPwdLength; i++)
-  {
-    if (isalpha(vendorPassword[i]))
-    {
-      PRINTF("%c,", vendorPassword[i]);
-    }
-    else if (vendorPassword[i] < 10)
-    {
-      PRINTF("\\%c,", vendorPassword[i] + 0x30);
-    }
-    else
-    {
-      PRINTF("\\%c,", vendorPassword[i] - 10 + 0x41);
-    }
-  }
-  PRINTF("], vendorPwdLength = %d\n", nVendorPwdLength);
-  if (nVendorPwdLength < 10)
-  {
-    printf("vendor password length = %d. Needs to be 10 to 20 characters long\n", nVendorPwdLength);
-    return 1;
-  }
-
-  int res;
+  // Initialize the AutoLM class with the passed parameters
   res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
                        vendorPassword, nVendorPwdLength, NULL, argv[7]);
 
+  // If initialization success, validate the license file
   PRINTF(" %d Validating license file...", res);
   if (res == 0)
   {
@@ -157,6 +99,11 @@ int main(int argc, const char **argv)
     printf("%llu\n", resultValue);
     return (int)resultValue;
   }
+
+  // Otherwise, initialization failed, return zero
   else
+  {
     printf("0\n");
+    return 0;
+  }
 }
