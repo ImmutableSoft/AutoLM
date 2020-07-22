@@ -19,8 +19,4 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="curl\builds\libcurl-vc19-x86-release-static-ipv6-sspi-winssl\lib\libcurl_a.lib" />
-    <Library Include="build\lib\Win32\Release\AutoLM.lib" />
-  </ItemGroup>
 </Project>

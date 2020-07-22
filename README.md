@@ -56,6 +56,7 @@ cd curl
 
 ### Visual Studio 2019
 
+## x86
 From the Start (bottom left Windows button) search field,
 open the application "Developer Command Prompt for VS 2019".
 Move into the curl directory (cd AutoLM/curl)
@@ -68,6 +69,27 @@ buildconf.bat
 cd winbuild
 nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
 ```
+
+This will create libcurl_a.lib in the folder
+curl\builds\libcurl-vc19-x86-release-static-ipv6-sspi-winssl\lib
+
+## x64
+
+From the Start (bottom left Windows button) search field,
+open the application "x64 Native Tools Command Prompt for VS 2019".
+Move into the curl directory (cd AutoLM/curl)
+within this Developer Command Prompt and configure the
+repository by running the buildconf.bat command, and then
+moving to the winbuild folder and building with nmake.
+
+```
+buildconf.bat
+cd winbuild
+nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
+```
+This will create libcurl_a.lib in the folder
+curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib
+
 ### Linux
 
 To configure, make and install the default libcurl installation,
