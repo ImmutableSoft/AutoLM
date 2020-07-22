@@ -55,7 +55,7 @@ int OverrideMachineId(char* comp_id)
   if (ComputerId[0] == 0)
     strcpy(ComputerId, comp_id);
   strcpy(comp_id, ComputerId);
-  return strlen(ComputerId);
+  return (int)strlen(ComputerId);
 }
 
 int main(int argc, const char **argv)
