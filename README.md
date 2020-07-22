@@ -16,7 +16,7 @@ This method bypasses the need to install and build
 curl so there is no need to run git submodules init and update.
 Examples to install libcurl development are below.
 
-###Debian
+### Debian
 
 Curl requires OpenSSL (or similar) development so be sure the OpenSSL
 development environment is installed and available.
@@ -26,7 +26,7 @@ sudo apt-get install openssl-devel
 sudo apt-get install libcurl-dev
 ```
 
-###MSYS2
+### MSYS2
 
 Curl on MSYS2, especially when using SSL, has many dependencies. Note
 that if you choose the minimum build below, not all of these are needed.
