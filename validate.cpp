@@ -69,10 +69,10 @@ int main(int argc, const char **argv)
   int nVendorPwdLength = 10; // init vendor password length
 
   const char* strVendorPassword = argv[6];
-  int nVendorPasswordStrLength = strlen(strVendorPassword);
+  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
   if (nVendorPasswordStrLength > 20)
   {
-    printf("vendorPassword argument '%s' length is %d, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
+    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
     return 1;
   }
   else
@@ -80,7 +80,7 @@ int main(int argc, const char **argv)
     //convert escape chars in password \char to char hex value
     int j = 0;
     int nPwdLength = 0;
-    for (int i = 0; i < nVendorPasswordStrLength; i++)
+    for (int i = 0; i < (int)nVendorPasswordStrLength; i++)
     {
       if (strVendorPassword[i] != '\\')
       {
@@ -155,7 +155,7 @@ int main(int argc, const char **argv)
       res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &resultValue);
     PRINTF(" validated %d, expires on %lu\n", res, expireTime);
     printf("%llu\n", resultValue);
-    return resultValue;
+    return (int)resultValue;
   }
   else
     printf("0\n");

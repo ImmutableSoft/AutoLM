@@ -44,6 +44,8 @@
 #include "process.h"
 #endif
 
+#ifndef _ONLYCREATE
+
 #include "curl/curl.h"
 
 #define MAX_SIZE_JSON_RESPONSE     1024
@@ -53,8 +55,6 @@
  Example command line (Entity 2, Product 0, Activation 1)
  curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\": [{\"to\": \"0x21027DD05168A559330649721D3600196aB0aeC2\", \"data\": \"0x9277d3d6000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}, \"latest\"], \"id\": 1}" https://ropsten.infura.io/v3/<ProductId>
 */
-
-#ifndef _ONLYCREATE
 
 /***********************************************************************/
 /* pack_hash_to_32bytes: Pack a hash string to 32 byte array.          */
@@ -756,7 +756,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           }
 
           // Compare the computer id lengths
-          hostidlen = strlen(loc_hostid);
+          hostidlen = (int)strlen(loc_hostid);
           if (strlen(machineId) != (size_t)hostidlen)
           {
             rval = compidInvalid;

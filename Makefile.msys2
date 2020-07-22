@@ -40,23 +40,23 @@ INCLUDES = -I"." -I"./base" \
 LIBAUTO = \
 	base/sha1.o \
 	base/md5.o \
-	compid.o \
+	CompId.o \
 	autolm.o
 
 COMPID = \
-	compid.o
+	CompId.o
 
 VALIDATE = \
 	base/sha1.o \
 	base/md5.o \
-	compid.o \
+	CompId.o \
 	autolm.o
 
 ACTIVATE = \
 	base/sha1.o \
 	base/md5.o \
-	compid.o \
-	activate.o
+	CompId.o \
+	Activate.o
 
 # Replace -lcurl below with custom build
 CURLLIB = -lcurl
@@ -64,9 +64,9 @@ CURLLIB = -lcurl
 # The name of library output file (static libautolm.a)
 #AUTOLIB = ./libautolm.a
 AUTOLIB = ./libautolm.so
-COMPIDEXE = ./compid.exe
-ACTIVATEEXE = ./activate.exe
-VALIDATEEXE = ./validate.exe
+COMPIDEXE = ./CompId.exe
+ACTIVATEEXE = ./Activate.exe
+VALIDATEEXE = ./Validate.exe
 
 # Static build
 #LDFLAGS = -fPIC -static
@@ -105,7 +105,7 @@ libauto: $(LIBAUTO)
                 $(LDFLAGS) $(LIBS)
 
 compid: $(COMPID)
-	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE compid.cpp \
+	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE CompId.cpp \
                 -mwindows -lstdc++
 
 validate: $(VALIDATE)
