@@ -108,14 +108,18 @@ To configure, make and install the default libcurl installation,
 use these commands in the curl directory (installed with
 git submodule update).
 
+
 ```
+cd curl
 ./configure --with-ssl
 make install
 ```
-To configure, make and install the minimum libcurl installation
-that works with AutoLM, use these commands.
+
+<b>Alternatively</b>, to configure, make and install the minimum
+libcurl installation that works with AutoLM, use these commands.
 
 ```
+cd curl
 ./configure --with-ssl --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp  --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-manual --without-brotli --without-zlib --disable-progress-meter  --disable-dnsshuffle
 make
 make install
