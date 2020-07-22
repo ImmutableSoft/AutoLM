@@ -51,7 +51,6 @@ to clone (download) the latest curl code into your build tree.
 ```
 git submodule init
 git submodule update
-cd curl
 ```
 
 ### Visual Studio 2019
@@ -62,16 +61,26 @@ one platform then only that section needs to be completed.
 If you do not complete both sections below then not all
 build configurations for AutoLM solution will link correctly.
 
-## x86
+First, configure the build environment after cloning (not
+required if installing release zip, only if a fresh clone).
 From the Start (bottom left Windows button) search field,
 open the application "Developer Command Prompt for VS 2019".
 Move into the curl directory (cd AutoLM/curl)
 within this Developer Command Prompt and configure the
-repository by running the buildconf.bat command, and then
-moving to the winbuild folder and building with nmake.
+repository by running the buildconf.bat command.
 
 ```
+cd curl
 buildconf.bat
+```
+
+## x86
+
+From the Start (bottom left Windows button) search field,
+open the application "Developer Command Prompt for VS 2019"
+and then move to the winbuild folder and building with nmake.
+
+```
 cd winbuild
 nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
 ```
@@ -82,14 +91,10 @@ curl\builds\libcurl-vc19-x86-release-static-ipv6-sspi-winssl\lib
 ## x64
 
 From the Start (bottom left Windows button) search field,
-open the application "x64 Native Tools Command Prompt for VS 2019".
-Move into the curl directory (cd AutoLM/curl)
-within this Developer Command Prompt and configure the
-repository by running the buildconf.bat command, and then
-moving to the winbuild folder and building with nmake.
+open the application "x64 Native Tools Command Prompt for VS 2019"
+and then move to the winbuild folder and building with nmake.
 
 ```
-buildconf.bat
 cd winbuild
 nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
 ```
