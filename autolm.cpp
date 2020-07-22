@@ -46,12 +46,15 @@
 
 #include "curl/curl.h"
 
-#define MAX_SIZE_JSON_RESPONSE 1024
+#define MAX_SIZE_JSON_RESPONSE     1024
+#define BLOCK_CHAIN_CHAR           ':' /* use colon as special char */
 
 /*
  Example command line (Entity 2, Product 0, Activation 1)
  curl --data "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\": [{\"to\": \"0x21027DD05168A559330649721D3600196aB0aeC2\", \"data\": \"0x9277d3d6000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"}, \"latest\"], \"id\": 1}" https://ropsten.infura.io/v3/<ProductId>
 */
+
+#ifndef _ONLYCREATE
 
 /***********************************************************************/
 /* pack_hash_to_32bytes: Pack a hash string to 32 byte array.          */
@@ -479,6 +482,7 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   return autolm_read_activation(infuraId, jsonDataAll, exp_date,
                                 ret_value);
 }
+#endif /* ifndef _ONLYCREATE */
 
 #ifdef __cplusplus
 /***********************************************************************/
@@ -514,9 +518,14 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   ui8 compid_octet[36];
   unsigned int compidlen;
 
-  if ((vendor == NULL) || (product == NULL) || (infuraId == NULL) ||
+  if ((vendor == NULL) || (product == NULL) ||
       (password == NULL))
     return otherLicenseError;
+
+#ifndef _ONLYCREATE
+  if (infuraId == NULL)
+    return otherLicenseError;
+#endif
 
   strcpy(AutoLmOne.vendor, vendor);
   AutoLmOne.vendorlen = strlen(AutoLmOne.vendor);
@@ -525,8 +534,13 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   strcpy(AutoLmOne.product, product);
   AutoLmOne.productlen = strlen(AutoLmOne.product);
   AutoLmOne.productid = productId;
+#ifdef _ONLYCREATE
+  AutoLmOne.blockchainValidate = NULL;
+#else
   AutoLmOne.blockchainValidate = validate_onchain;
-  strcpy(AutoLmOne.infuraProductId, infuraId);
+#endif
+  if (infuraId)
+    strcpy(AutoLmOne.infuraProductId, infuraId);
   AutoLmOne.getComputerId = computer_id;
   if (AutoLmOne.getComputerId == NULL)
     AutoLmOne.getComputerId = AutoLmMachineId;
@@ -566,6 +580,8 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   return 0;
 }
 
+#ifndef _ONLYCREATE
+
 /***********************************************************************/
 /* AutoLmValidateLicense: Determine validity of a license file         */
 /*                                                                     */
@@ -588,7 +604,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
                      /* as a string it could be up to 44 characters */
   char loc_hostid[120], loc_vendor[20], loc_app[30];
   char loc_vendorId[40], loc_productId[40];
-  ui8 gen_lMAC[20], hash_octet[20],hostid_octet[36],realhost_octet[16];
+  ui8 gen_lMAC[20], hash_octet[20];
   int i, authlen, hashlen, rval, hostidlen;
   ui64 loc_vendorid, loc_productid;
   bool in_vendor = false, in_app = false, app_parsed = false;
@@ -732,7 +748,6 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
         if (strcmp(loc_hostid, "0x") != 0)
         {
           char machineId[64];
-          int realhostlen;
 
           if (AutoLmMachineId(machineId) <= 0)
           {
@@ -740,23 +755,19 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
             continue;
           }
 
-          realhostlen = AutoLmStringToHex(machineId, realhost_octet);
-          if (realhostlen <= 0)
+          // Compare the computer id lengths
+          hostidlen = strlen(loc_hostid);
+          if (strlen(machineId) != (size_t)hostidlen)
           {
             rval = compidInvalid;
             continue;
           }
 
-          hostidlen = AutoLmStringToHex(loc_hostid, hostid_octet);
-          if (hostidlen <= 0)
-          {
-            rval = compidInvalid;
-            continue;
-          }
-
+          // Compare each character of the hex string (4 bit nibble)
           for (i = 0; i < hostidlen; i++)
           {
-            if (hostid_octet[i] != realhost_octet[i])
+            // Convert to uppercase and compare to avoid case issues
+            if (toupper(machineId[i]) != toupper(loc_hostid[i]))
             {
               rval = compidInvalid;
               continue;
@@ -770,13 +781,18 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
         }
 
         /*-------------------------------------------------------------*/
-        /* Read and check that the resulting hash is valid             */
+        /* Put the hash string of the license file into tmpstr1        */
         /*-------------------------------------------------------------*/
         strcpy(tmp, &(strchr(tmpstr, ' ')[1]));
         strcpy(tmpstr1, tmp);
         strcpy(tmpstr, tmp);
         if (strchr(tmpstr1, ' '))
           strchr(tmpstr1, ' ')[0] = 0;
+
+
+        /*-------------------------------------------------------------*/
+        /* Pre-configure HMAC length based on authentication mode.     */
+        /*-------------------------------------------------------------*/
         if (AutoLmOne.mode == 3)
           authlen = 20;
         else
@@ -859,28 +875,37 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           goto done;
         }
       }
-      else;
     }
+
+    // Close the license file
     fclose(pFILE);
 
+    // If a license found and valid, check Ethereum database
     if (in_vendor && in_app && app_parsed && (rval == licenseValid))
     {
       PRINTF("llEntityId = %llu, llProductId = %llu\n", loc_vendorid,
-             loc_productid); // do blockchain validation
+             loc_productid);
+
+      // Query the Ethereum database for the activation value
       rval = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid,
-                                          loc_hash,
+                                          loc_hash, // hash is activation
                                           AutoLmOne.infuraProductId,
                                           exp_date, resultValue);
+
+      // If the license is expired copy the activation id for caller
       if (rval == blockchainExpiredLicense)
       {
           strcpy(buyHashId, loc_hash);
           PRINTF("buyHashId-%s\n", buyHashId);
       }
-      // Otherwise the license is valid or some error
+
+      // Return success or error, resultValue has activation value
       return rval;
     }
 
-    return rval;
+    // Otherwise no acceptable license for this application
+    else
+      return noApplicationMatch;
   }
   else
     return noLicenseFile;
@@ -889,6 +914,7 @@ done:
   fclose(pFILE);
   return rval;
 }
+#endif
 
 /***********************************************************************/
 /* imtAutoLmHashLicense: Calculate authentication hash of a license    */

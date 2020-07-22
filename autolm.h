@@ -43,25 +43,34 @@
 /*
  * Build options
  */
-#define AUTOLM_DEBUG           0 // 1 to Enable debug output
+
+// Application Ethereum Blockchain Connectivity Options
+//
+// Be sure to use the same network for both URL and contract address
+//   Both should be for Ropsten or Main Network
+#define CURL_HOST_URL              ROPSTEN_INFURA_URL
+#define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_LICENSE_CONTRACT
+
+// Options are Ropsten or Local Ganache. Main Network coming soon!
+#define ROPSTEN_INFURA_URL         "https://ropsten.infura.io/v3/"
+#define LOCAL_GANACHE_URL          "http://localhost:8545/"
+
+// Debugging options
+#define AUTOLM_DEBUG               0 // 1 to Enable debug output
 #if AUTOLM_DEBUG
-#define   PRINTF               printf
+#define   PRINTF                   printf
 #else
 #define   PRINTF(...)          
 #endif
 
-// Ethereum Blockchain Connectivity Options
-#define CURL_HOST_URL          ROPSTEN_INFURA_URL
-#define ADD_BLOCK_CHAIN_CHECK  1  /* append blockchain special char */
-#define BLOCK_CHAIN_CHAR       ':' /* use colon as special char */
-#define ROPSTEN_INFURA_URL     "https://ropsten.infura.io/v3/"
-#define LOCAL_GANACHE_URL      "http://localhost:8545/"
-
 // Immutable Ecosystem
-#define LICENSE_STATUS_ID      "0x9277d3d6" // Keccak256 ("licenseStatus(uint256, uint256, uint256)") = 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
-#define ROPSTEN_IMMUTABLE_LICENSE_CONTRACT "0x21027DD05168A559330649721D3600196aB0aeC2"
-#define GANACHE_IMMUTABLE_LICENSE_CONTRACT "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
-#define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_IMMUTABLE_LICENSE_CONTRACT
+//   DO NOT EDIT BELOW
+
+// Keccak256 ("licenseStatus(uint256, uint256, uint256)") =
+// 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
+#define LICENSE_STATUS_ID          "0x9277d3d6"
+#define ROPSTEN_LICENSE_CONTRACT   "0x21027DD05168A559330649721D3600196aB0aeC2"
+#define GANACHE_LICENSE_CONTRACT   "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
 
 /***********************************************************************/
 /* Type Definitions                                                    */
@@ -76,22 +85,14 @@ enum AutoLmResponse
   noVendorMatch,
   noApplicationMatch,
   newerRevision,
-  expiredLicense, 
-  authenticationFailed, 
+  expiredLicense,
+  authenticationFailed,
   authFieldInvalid,
   authFieldWrongLength,
   compidInvalid,
-  serverFull, /* 10 */
-  serverExpire,
-  serverNoResponse,
-  serverBuildError,
-  serverParseError,
-  serverRetry,
-  serverLostState,
-  dongleNotFound,
-  blockchainVendoridNoMatch,
+  blockchainVendoridNoMatch, /* 10 */
   blockchainProductidNoMatch,
-  blockchainExpiredLicense, /* 20 */
+  blockchainExpiredLicense,
   blockchainAuthenticationFailed,
   curlPerformFailed,
   otherLicenseError
@@ -119,7 +120,7 @@ typedef struct AutoLmConfig
 /***********************************************************************/
 /* Global definitions                                                  */
 /***********************************************************************/
-// From compid.cpp
+// From compid.cpp or equivalent
 extern int AutoLmMachineId(char* comp_id);
 
 /***********************************************************************/
@@ -149,7 +150,7 @@ public:
 private:
   int AutoLmStringToHex(const char *hexstring, ui8 *result);
   int AutoLmHashLicense(const char *appstr, const char *computerid,
-                           ui8 *hashresult);
+                        ui8 *hashresult);
   void AutoLmPwdToKeyMd5(
      const char *password,  /* IN */
      int passwordlen, /* IN */

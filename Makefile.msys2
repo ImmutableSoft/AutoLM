@@ -43,12 +43,30 @@ LIBAUTO = \
 	compid.o \
 	autolm.o
 
+COMPID = \
+	compid.o
+
+VALIDATE = \
+	base/sha1.o \
+	base/md5.o \
+	compid.o \
+	autolm.o
+
+ACTIVATE = \
+	base/sha1.o \
+	base/md5.o \
+	compid.o \
+	activate.o
+
 # Replace -lcurl below with custom build
 CURLLIB = -lcurl
 
 # The name of library output file (static libautolm.a)
 #AUTOLIB = ./libautolm.a
 AUTOLIB = ./libautolm.so
+COMPIDEXE = ./compid.exe
+ACTIVATEEXE = ./activate.exe
+VALIDATEEXE = ./validate.exe
 
 # Static build
 #LDFLAGS = -fPIC -static
@@ -56,7 +74,7 @@ LDFLAGS =
 LIBS = -lstdc++
 # These may be needed for static build, depending on curl install
 #LIBS = -lcurl -lssl -lcrypto -lbrotlidec -lbrotlicommon -lnghttp2 \
-#       -lpsl -lidn2 -liconv -lstdc++ -lIphlpapi -lz -lunistring
+#       -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
 
 ##
 ## Implicit Targets
@@ -75,7 +93,7 @@ LIBS = -lstdc++
 ##CFLAGS = $(CFLAGS) -ggdb
 ##		CPPFLAGS = $(CPPFLAGS) -ggdb
 
-all:		libauto
+all:		libauto compid validate activate
 
 # To create a static library change this below
 #	$(CPP) $(CPPFLAGS) -static \
@@ -83,8 +101,26 @@ all:		libauto
 libauto: $(LIBAUTO)
 	$(CPP) $(CPPFLAGS) -shared \
                 -o $(AUTOLIB) \
-				$(LIBAUTO) $(CURLLIB) \
-				$(LDFLAGS) $(LIBS)
+                $(LIBAUTO) $(CURLLIB) \
+                $(LDFLAGS) $(LIBS)
+
+compid: $(COMPID)
+	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE compid.cpp \
+                -mwindows -lstdc++
+
+validate: $(VALIDATE)
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(VALIDATEEXE) validate.cpp \
+	               $(VALIDATE) \
+                 -mwindows -lcurl -lssl -lcrypto -lnghttp2 -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
+
+activate: $(ACTIVATE)
+	$(CPP) $(CPPFLAGS) -D_ONLYCREATE $(INCLUDES) -o $(ACTIVATEEXE) autolm.cpp \
+	               $(ACTIVATE) \
+                 -mwindows -lstdc++
+
+
+#	$(CPP) $(CPPFLAGS) -o $(ACTIVATEEXE) $(ACTIVATE) \
+                 -mwindows -lstdc++
 
 # For libcurl static, remaning shared
 #				-Wl,--whole-archive \
@@ -95,5 +131,8 @@ clean:
 	$(RM) *.o
 	$(RM) ./base/*.o
 	$(RM) libautolm.so
+	$(RM) compid.exe
+	$(RM) activate.exe
+	$(RM) validate.exe
 
 ##

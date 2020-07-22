@@ -216,31 +216,32 @@ The following command line tools are created when AutoLM
 is built; 'compid', 'activate' and 'validate'. Only
 'activate' and 'validate' are required. The 'compid' is
 used by an application for troubleshooting or when a server
-call is required to 'activate'. Only 'validate' requires
-libcurl.
-
-
+call is required to 'activate'. 'activate' creates a local
+license (file) using the end users compid and the application
+secret. The 'validate' call requires a previously created
+local license (file) and uses libcurl to validate the license
+on the Ethereum network.
 
 # AutoLM Features
 
 ## Globally Unique and Immutable Identifier
 
-First, the library can retrieve a globally unique and immutable
-identifier (computer id) from the physical hardware executing
-the library. This identifier will never change for this physical
+The foundation of AutoLM is the globally unique and immutable
+identifier (computer id). From the physical hardware executing
+the library, this identifier will never change for a physical
 computer without a reinstall of the OS. This identifier also
 cannot be easily faked or changed by the user (immutable). This
-global unique and immutable identifier is used to create
+global unique and immutable OS identifier is used to create
 system specific software license activations.
 
-AutoLM supports an application defined computer id to allow
-customization of this step. Use a unique method or chain
-together user or system hardware information to create a
-more refined activation identifier. It is perfectly acceptable
+To encourage customization of this step, AutoLM supports integration
+with any application defined computer id that returns hex string format.
+Use an application specific and unique method or chain together
+user or system hardware information with the default to create a
+more specific activation identifier. It is perfectly acceptable
 that different applications create different identifiers, but
-by default they are identical (for ease of troubleshooting and
-because the computer id is only used to derive the final
-activation identifier. After compilation the computer id for
+by default they will be identical as the requirement is that
+they be unique per PC/OS. After compilation the computer id for
 the compiled system can be retrieved with the compid binary.
 
 ```
