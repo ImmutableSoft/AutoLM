@@ -144,13 +144,19 @@ int main(int argc, const char **argv)
                        vendorPassword, nVendorPwdLength, NULL, argv[7]);
 
   PRINTF(" %d Validating license file...", res);
-  time_t expireTime = 0;
-  char buyHashId[67] = "";
-  ui64 resultValue = 0;
-  if (argc == 9)
-    res = lm->AutoLmValidateLicense(argv[8], &expireTime, buyHashId, &resultValue);
-  else if ((argc == 8) && ((argv[7][0] != '0') && (argv[7][1] != 'x')))
-    res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &resultValue);
-  PRINTF(" validated %d, expires on %lu\n", res, expireTime);
-  printf("%llu\n", resultValue);
+  if (res == 0)
+  {
+    time_t expireTime = 0;
+    char buyHashId[67] = "";
+    ui64 resultValue = 0;
+    if (argc == 9)
+      res = lm->AutoLmValidateLicense(argv[8], &expireTime, buyHashId, &resultValue);
+    else if ((argc == 8) && ((argv[7][0] != '0') && (argv[7][1] != 'x')))
+      res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &resultValue);
+    PRINTF(" validated %d, expires on %lu\n", res, expireTime);
+    printf("%llu\n", resultValue);
+    return resultValue;
+  }
+  else
+    printf("0\n");
 }
