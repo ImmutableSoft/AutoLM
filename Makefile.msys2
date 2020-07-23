@@ -25,8 +25,8 @@ LINK = /bin/sh /usr/bin/libtool --mode=link c++
 ## Definitions:
 ##
 # need -DCURL_STATICLIB for static build
-EXTRAS = -ggdb -O0 -DWIN32 -D_MINGW -D_WINDOWS -DCURL_STATICLIB
-#EXTRAS = -O3 -fexpensive-optimizations -DWIN32 
+EXTRAS = -ggdb -O0 -Wno-multichar -DWIN32 -D_MINGW -D_WINDOWS -DCURL_STATICLIB
+#EXTRAS = -O3 -Wno-multichar -fexpensive-optimizations -DWIN32
 
 CPPFLAGS = -Wall $(EXTRAS)
 CFLAGS = -Wall $(EXTRAS)
@@ -105,7 +105,7 @@ libauto: $(LIBAUTO)
                 $(LDFLAGS) $(LIBS)
 
 compid: $(COMPID)
-	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE CompId.cpp \
+	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE -Wno-multichar CompId.cpp \
                 -mwindows -lstdc++
 
 validate: $(VALIDATE)

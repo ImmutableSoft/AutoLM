@@ -32,24 +32,26 @@
 #ifdef _WINDOWS
 #include <Windows.h>
 #include <string>
-#include <tchar.h>
+#include "autolm.h"
 
+// Reference:
+// https://stackoverflow.com/questions/60700302/win32-api-to-get-machine-uuid
 
 typedef struct _dmi_header
 {
-  BYTE type;
-  BYTE length;
-  WORD handle;
+  ui8 type;
+  ui8 length;
+  ui16 handle;
 }dmi_header;
 
 typedef struct _RawSMBIOSData
 {
-  BYTE    Used20CallingMethod;
-  BYTE    SMBIOSMajorVersion;
-  BYTE    SMBIOSMinorVersion;
-  BYTE    DmiRevision;
-  DWORD   Length;
-  BYTE    SMBIOSTableData[];
+  ui8 Used20CallingMethod;
+  ui8 SMBIOSMajorVersion;
+  ui8 SMBIOSMinorVersion;
+  ui8 DmiRevision;
+  ui32 Length;
+  ui8 SMBIOSTableData[1];
 }RawSMBIOSData;
 
 static int get_dmi_system_uuid(const BYTE* p, short ver, char *result)
@@ -103,7 +105,6 @@ int AutoLmMachineId(char* comp_id)
   int ret = 0;
   RawSMBIOSData* Smbios;
   dmi_header* h = NULL;
-  int flag = 1;
 
   ret = GetSystemFirmwareTable('RSMB', 0, 0, 0);
   if (!ret)
@@ -131,7 +132,7 @@ int AutoLmMachineId(char* comp_id)
     return 1;
   }
 
-  for (int i = 0; i < Smbios->Length; i++) {
+  for (ui32 i = 0; i < Smbios->Length; i++) {
     h = (dmi_header*)p;
 
     if (h->type == 1) {

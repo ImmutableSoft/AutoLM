@@ -44,8 +44,8 @@
 
 /* -- utility definition -- */
 typedef unsigned long  long ui64;
-typedef unsigned long  ui32;
-typedef unsigned short ushort;
+typedef unsigned int   ui32;
+typedef unsigned short ui16;
 typedef unsigned char  ui8;
 
 /***********************************************************************/
