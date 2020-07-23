@@ -138,6 +138,8 @@ int main(int argc, const char **argv)
       res = lm->AutoLmCreateLicense(argv[8]);
     else if ((argc == 8) && ((argv[7][0] != '0') && (argv[7][1] != 'x')))
       res = lm->AutoLmCreateLicense(argv[7]);
+    else if ((argc == 8) && ((argv[7][0] == '0') && (argv[7][1] == 'x')))
+      res = lm->AutoLmCreateLicense("./license.elm");
     else
       res = lm->AutoLmCreateLicense("./license.elm");
     PRINTF("AutoLmCreateLicense result %d\n", res);

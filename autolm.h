@@ -156,13 +156,13 @@ private:
   void AutoLmPwdToKeyMd5(
      const char *password,  /* IN */
      int passwordlen, /* IN */
-     ui8 *locstr,   /* IN  - pointer to unique ID  */
+     const ui8 *locstr,   /* IN  - pointer to unique ID  */
      ui32 locstrlen,  /* IN  - length of unique ID */
      ui8 *key);     /* OUT - pointer to resulting 16-byte buffer */
   void AutoLmPwdToKeySha(
      const char *password,  /* IN */
      int passwordlen, /* IN */
-     ui8 *locstr,   /* IN  - pointer to unique ID  */
+     const ui8 *locstr,   /* IN  - pointer to unique ID  */
      ui32 locstrlen,  /* IN  - length of unique ID */
      ui8 *key);     /* OUT - pointer to resulting 20-byte buffer */
   int AutoLmCalculateHash(int type, ui8 *wholeMsg,

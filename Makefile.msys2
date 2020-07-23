@@ -114,7 +114,7 @@ validate: $(VALIDATE)
                  -mwindows -lcurl -lssl -lcrypto -lnghttp2 -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
 
 activate: $(ACTIVATE)
-	$(CPP) $(CPPFLAGS) -D_ONLYCREATE $(INCLUDES) -o $(ACTIVATEEXE) autolm.cpp \
+	$(CPP) $(CPPFLAGS) -D_CREATEONLY $(INCLUDES) -o $(ACTIVATEEXE) autolm.cpp \
 	               $(ACTIVATE) \
                  -mwindows -lstdc++
 

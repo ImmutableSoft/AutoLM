@@ -19,6 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="autolm.cpp" />
+    <ClCompile Include="base\md5.cpp" />
+    <ClCompile Include="base\sha1.cpp" />
+    <ClCompile Include="CompId.cpp" />
     <ClCompile Include="Validate.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -75,38 +79,39 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(OutDir)\$(ProjectName).dir\</IntDir>
+    <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(OutDir)\$(ProjectName).dir\</IntDir>
+    <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(OutDir)\$(ProjectName).dir\</IntDir>
+    <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(OutDir)\$(ProjectName).dir\</IntDir>
+    <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;_DEBUG;_CONSOLE;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;_VALIDATEONLY;_DEBUG;_CONSOLE;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)/curl/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>AutoLMd.lib;libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\;$(SolutionDir)\curl\builds\libcurl-vc19-x86-release-static-ipv6-sspi-winssl\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -116,7 +121,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;NDEBUG;_CONSOLE;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;_VALIDATEONLY;NDEBUG;_CONSOLE;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)/curl/include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -125,9 +130,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>AutoLM.lib;libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\;$(SolutionDir)\curl\builds\libcurl-vc19-x86-release-static-ipv6-sspi-winssl\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -135,16 +142,17 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;_VALIDATEONLY;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)/curl/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>AutoLMd.lib;libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\;$(SolutionDir)\curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -154,7 +162,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CURL_STATICLIB;_WINDOWS;_VALIDATEONLY;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)/curl/include</AdditionalIncludeDirectories>
     </ClCompile>
@@ -163,9 +171,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>AutoLM.lib;libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>libcurl_a.lib;Normaliz.lib;Netapi32.lib;Crypt32.lib;ws2_32.lib;wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\;;$(SolutionDir)\curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

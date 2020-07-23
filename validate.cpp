@@ -37,6 +37,29 @@
 
 #include "autolm.h"
 
+#if AUTOLM_DEBUG
+/***********************************************************************/
+/* OverrideMachineId: Save and return the machine id                   */
+/*                                                                     */
+/*      Inputs: comp_id = IN/OUT the machine-id from User              */
+/*                          First call initializes machine-id          */
+/*                          Subsequent calls return machine-id         */
+/*                                                                     */
+/*     Returns: length of OUT comp_id if success, otherwise error      */
+/*                                                                     */
+/***********************************************************************/
+int OverrideMachineId(char* comp_id)
+{
+    static char ComputerId[64] = "";
+
+    // First time initialize
+    if (ComputerId[0] == 0)
+        strcpy(ComputerId, comp_id);
+    strcpy(comp_id, ComputerId);
+    return (int)strlen(ComputerId);
+}
+#endif
+
 /***********************************************************************/
 /*        main: Main application entry point                           */
 /*                                                                     */
@@ -58,8 +81,13 @@ int main(int argc, const char **argv)
   const char* strVendorPassword = argv[6];
   size_t nVendorPasswordStrLength = strlen(strVendorPassword);
 
-  // Entity, EntityId, Application, AppId, Mode, Password, CompId, Filename
+#if AUTOLM_DEBUG
+  // Entity, EntityId, App, AppId, Mode, Password, infuraId, <CompId>, <Filename>
+  if ((argc < 8) || (argc > 10))
+#else
+  // Entity, EntityId, App, AppId, Mode, Password, infuraId, <Filename>
   if ((argc < 8) || (argc > 9))
+#endif
   {
     printf("Invalid number of arguments %d", argc);
     puts("");
@@ -75,6 +103,9 @@ int main(int argc, const char **argv)
     puts("  <mode> is authenticate mode, 2 is MD5, 3 is SHA1");
     puts("  <password> password string, supports escape characters ie. 'Passw\\0rd'");
     puts("  <infura id> the product ID from Infura.io");
+#if AUTOLM_DEBUG
+    puts("  [comp id] Optional. Computer/Machine Id, or current OS/PC if missing");
+#endif
     puts("  [file name] Optional. Default is ./license.elm");
 
     return -1;
@@ -91,9 +122,26 @@ int main(int argc, const char **argv)
   else
     nVendorPwdLength = lm->AutoLmPwdStringToBytes(strVendorPassword, vendorPassword);
 
+#if AUTOLM_DEBUG
+  // Assign override machine id to force CompId from parameter list
+  if ((argc >= 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
+      OverrideMachineId((char*)argv[8]);
+
   // Initialize the AutoLM class with the passed parameters
-  res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-                       vendorPassword, nVendorPwdLength, NULL, argv[7]);
+  // If computer id passed, use instead of local OS/PC
+  if ((argc >= 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
+  {
+      res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
+          vendorPassword, nVendorPwdLength, OverrideMachineId, argv[7]);
+  }
+
+  // Otherwise use the default Computer Id
+  else
+#endif
+  {
+      res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
+          vendorPassword, nVendorPwdLength, NULL, argv[7]);
+  }
 
   // If initialization success, validate the license file
   PRINTF(" %d Validating license file...", res);
@@ -102,10 +150,17 @@ int main(int argc, const char **argv)
     time_t expireTime = 0;
     char buyHashId[67] = "";
     ui64 resultValue = 0;
-    if (argc == 9)
+#if AUTOLM_DEBUG
+    if (argc == 10)
+      res = lm->AutoLmValidateLicense(argv[9], &expireTime, buyHashId, &resultValue);
+    else if ((argc == 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
+        res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &resultValue);
+    else
+#endif
+    if ((argc == 9) && ((argv[8][0] != '0') && (argv[8][1] != 'x')))
       res = lm->AutoLmValidateLicense(argv[8], &expireTime, buyHashId, &resultValue);
-    else if ((argc == 8) && ((argv[7][0] != '0') && (argv[7][1] != 'x')))
-      res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &resultValue);
+    else if (argc == 8)
+        res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &resultValue);
     PRINTF(" validated %d, expires on %lu\n", res, expireTime);
     printf("%llu\n", resultValue);
     return (int)resultValue;

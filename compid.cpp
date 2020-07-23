@@ -30,75 +30,63 @@
 /*                                                                     */
 /***********************************************************************/
 #ifdef _WINDOWS
-#include <memory.h>
-#include <string.h>
+#include <Windows.h>
 #include <string>
-#include <windows.h>
-#include "autolm.h"
+#include <tchar.h>
 
-/***********************************************************************/
-/* string_from_HKLM: convert from HLKM (Registry) to wchar_t string    */
-/*                                                                     */
-/*      Inputs: appstr = the Registry subkey to read from              */
-/*              regValue = the registry element to read                */
-/*              valueBuf = OUT the resulting value from HKLM as string */
-/*                                                                     */
-/*     Returns: length of OUT (valueBuf) if success, otherwise error   */
-/*                                                                     */
-/***********************************************************************/
-static int string_from_HKLM(const wchar_t* regSubKey,
-                            const wchar_t* regValue,
-                            wchar_t* valueBuf, int nBufSize)
+
+typedef struct _dmi_header
 {
-  DWORD cbData = nBufSize * sizeof(wchar_t);
-  memset(valueBuf, 0, cbData);
-  LONG lResult;
+  BYTE type;
+  BYTE length;
+  WORD handle;
+}dmi_header;
 
-  HKEY hkey;
-  lResult = RegOpenKeyExW(HKEY_LOCAL_MACHINE, regSubKey, 0,
-                          KEY_WOW64_64KEY + KEY_READ, &hkey);
-  if (lResult == 0)
+typedef struct _RawSMBIOSData
+{
+  BYTE    Used20CallingMethod;
+  BYTE    SMBIOSMajorVersion;
+  BYTE    SMBIOSMinorVersion;
+  BYTE    DmiRevision;
+  DWORD   Length;
+  BYTE    SMBIOSTableData[];
+}RawSMBIOSData;
+
+static int get_dmi_system_uuid(const BYTE* p, short ver, char *result)
+{
+  int only0xFF = 1, only0x00 = 1;
+  int i;
+
+  // Null the result string
+  result[0] = 0;
+
+  // Huh?
+  for (i = 0; i < 16 && (only0x00 || only0xFF); i++)
   {
-    lResult = RegGetValueW(hkey, L"", regValue, RRF_RT_REG_SZ,
-                           NULL, valueBuf, &cbData);
-#if AUTOLM_DEBUG
-    if (lResult == 0)
-    {
-      char tmp[128];
-
-      // Convert to C string form
-      wcstombs(tmp, valueBuf, 128);
-      tmp[127] = 0;
-
-      PRINTF("Key SOFTWARE\\Microsoft\\Cryptography\\MachineGUID value - '%s'\n", tmp);
-    }
-    else
-    {
-      PRINTF("Error %d during RegGetValue of MachineGUID\n", lResult);
-    }
-#endif
-
-    RegCloseKey(hkey);
+    if (p[i] != 0x00) only0x00 = 0;
+    if (p[i] != 0xFF) only0xFF = 0;
   }
+
+  // Huh?
+  if (only0xFF)
+  {
+    printf("Not Present");
+    return -1;
+  }
+
+  // Depending on the version, read UUID
+  if (ver >= 0x0206)
+    sprintf(result, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+      p[3], p[2], p[1], p[0], p[5], p[4], p[7], p[6],
+      p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
   else
-  {
-    PRINTF("Error %d opening HKEY_LOCAL_MACHINE, SOFTWARE\\Microsoft\\Cryptography\n", lResult);
-  }
-  if (lResult == ERROR_SUCCESS)
-  {
-    cbData /= sizeof(wchar_t);
-    return cbData;
-  }
-  else
-  {
-    // Return negative error code
-    if (lResult > 0)
-      return -lResult;
-    else
-      return lResult;
-  }
+    sprintf(result, "-%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+      p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+      p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+
+  // Return string length
+  return (int)strlen(result);
 }
-
 
 /***********************************************************************/
 /* AutoLmMachineId: Find and return the Windows MachineGuid            */
@@ -108,34 +96,71 @@ static int string_from_HKLM(const wchar_t* regSubKey,
 /*     Returns: length of OUT comp_id if success, otherwise error      */
 /*                                                                     */
 /***********************************************************************/
-int AutoLmMachineId(char *comp_id)
+int AutoLmMachineId(char* comp_id)
 {
-    char tmp[128];
-    int rval;
-    const wchar_t *regSubKey = L"SOFTWARE\\Microsoft\\Cryptography";
+  DWORD bufsize = 0;
+  BYTE buf[65536] = { 0 };
+  int ret = 0;
+  RawSMBIOSData* Smbios;
+  dmi_header* h = NULL;
+  int flag = 1;
 
-    const wchar_t *regValue(L"MachineGuid");
-    wchar_t valueFromRegistry[37];
+  ret = GetSystemFirmwareTable('RSMB', 0, 0, 0);
+  if (!ret)
+  {
+    printf("Function failed!\n");
+    return 1;
+  }
 
-    rval = string_from_HKLM(regSubKey, regValue, valueFromRegistry, 37);
+  bufsize = ret;
 
-    // Convert to C string form
-    wcstombs(tmp, valueFromRegistry, 128);
-    rval = (int)strlen(tmp);
+  ret = GetSystemFirmwareTable('RSMB', 0, buf, bufsize);
 
-    // Strip out dashes from the machine id
-    for (int i = 0; i < rval; ++i)
-    {
-      if (tmp[i] == '-')
-      {
-        memmove(&tmp[i], &tmp[i + 1], rval - i);
-        --rval;
-      }
+  if (!ret)
+  {
+    printf("Function failed!\n");
+    return 1;
+  }
+
+  Smbios = (RawSMBIOSData*)buf;
+  BYTE* p = Smbios->SMBIOSTableData;
+
+  if (Smbios->Length != bufsize - 8)
+  {
+    printf("Smbios length error\n");
+    return 1;
+  }
+
+  for (int i = 0; i < Smbios->Length; i++) {
+    h = (dmi_header*)p;
+
+    if (h->type == 1) {
+      char tmp[128];
+      int rval;
+
+      // Read out the UUID
+      rval = get_dmi_system_uuid(p + 0x8, Smbios->SMBIOSMajorVersion * 0x100 + Smbios->SMBIOSMinorVersion, tmp);
+
+      // Strip out dashes from the machine id
+       for (int i = 0; i < rval; ++i)
+       {
+         if (tmp[i] == '-')
+         {
+           memmove(&tmp[i], &tmp[i + 1], rval - i);
+           --rval;
+         }
+       }
+
+       // Prepend with 0x indicating hex string and return
+       sprintf(comp_id, "0x%s", tmp);
+       return (int)strlen(comp_id);
     }
+    p += h->length;
+    while ((*(WORD*)p) != 0) p++;
+    p += 2;
+  }
 
-    // Prepend with 0x indicating hex string and return
-    sprintf(comp_id, "0x%s", tmp);
-    return (int)strlen(comp_id);
+  return 0;
 }
 
 #else /* Otherwise Linux/BSD/MacOS */

@@ -44,7 +44,7 @@
 #include "process.h"
 #endif
 
-#ifndef _ONLYCREATE
+#ifndef _CREATEONLY
 
 #include "curl/curl.h"
 
@@ -482,7 +482,7 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   return autolm_read_activation(infuraId, jsonDataAll, exp_date,
                                 ret_value);
 }
-#endif /* ifndef _ONLYCREATE */
+#endif /* ifndef _CREATEONLY */
 
 #ifdef __cplusplus
 /***********************************************************************/
@@ -516,13 +516,13 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
                                const char* infuraId)
 {
   ui8 compid_octet[36];
-  unsigned int compidlen;
+  int compidlen;
 
   if ((vendor == NULL) || (product == NULL) ||
       (password == NULL))
     return otherLicenseError;
 
-#ifndef _ONLYCREATE
+#ifndef _CREATEONLY
   if (infuraId == NULL)
     return otherLicenseError;
 #endif
@@ -534,13 +534,13 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   strcpy(AutoLmOne.product, product);
   AutoLmOne.productlen = strlen(AutoLmOne.product);
   AutoLmOne.productid = productId;
-#ifdef _ONLYCREATE
+#ifdef _CREATEONLY
   AutoLmOne.blockchainValidate = NULL;
 #else
   AutoLmOne.blockchainValidate = validate_onchain;
-#endif
   if (infuraId)
     strcpy(AutoLmOne.infuraProductId, infuraId);
+#endif
   AutoLmOne.getComputerId = computer_id;
   if (AutoLmOne.getComputerId == NULL)
     AutoLmOne.getComputerId = AutoLmMachineId;
@@ -559,6 +559,7 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   if (compidlen <= 0)
     return compidInvalid;
 
+
   /*-------------------------------------------------------------------*/
   /* Localize the computer id into the password.                       */
   /*-------------------------------------------------------------------*/
@@ -570,11 +571,10 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
                       AutoLmOne.password);
   else
     return authenticationFailed;
-
   return 0;
 }
 
-#ifndef _ONLYCREATE
+#ifndef _CREATEONLY
 
 /***********************************************************************/
 /* AutoLmValidateLicense: Determine validity of a license file         */
@@ -743,7 +743,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
         {
           char machineId[64];
 
-          if (AutoLmMachineId(machineId) <= 0)
+          if (AutoLmOne.getComputerId(machineId) <= 0)
           {
             rval = compidInvalid;
             continue;
@@ -764,14 +764,14 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
             if (toupper(machineId[i]) != toupper(loc_hostid[i]))
             {
               rval = compidInvalid;
-              continue;
+              goto done;
             }
           }
         }
         else
         {
           rval = compidInvalid;
-          continue;
+          goto done;
         }
 
         /*-------------------------------------------------------------*/
@@ -985,6 +985,7 @@ int DECLARE(AutoLm) AutoLmStringToHex(const char *hexstring, ui8 *result)
       cnt = (int)strlen(tmpstr);
       if (cnt%2)
       {
+        PRINTF("String length is not a multiple of 2");
         return -1;
       }
       else
@@ -1009,6 +1010,7 @@ int DECLARE(AutoLm) AutoLmStringToHex(const char *hexstring, ui8 *result)
   return cnt;
 }
 
+#ifndef _VALIDATEONLY
 /***********************************************************************/
 /* AutoLmCreateLicense: Create blockchain activation license file      */
 /*                                                                     */
@@ -1087,6 +1089,7 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
   }
   return 0;
 }
+#endif /* _VALIDATEONLY */
 
 /***********************************************************************/
 /* AutoLmPwdStringToBytes: Convert escape characters to byte values    */
@@ -1157,7 +1160,7 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
   PRINTF("vendorPassword - [");
   for (int i = 0; i < nVendorPwdLength; i++)
   {
-    if (isalpha(byteResult[i]))
+    if (byteResult[i] > 15)
     {
       PRINTF("%c,", byteResult[i]);
     }
@@ -1193,7 +1196,7 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
 void DECLARE(AutoLm) AutoLmPwdToKeyMd5(
   const char *password,  /* IN */
   int passwordlen, /* IN */
-  ui8 *locstr,   /* IN  - pointer to unique id  */
+  const ui8 *locstr,   /* IN  - pointer to unique id  */
   ui32 locstrlen,  /* IN  - length of id */
   ui8 *key)      /* OUT - pointer to caller 16-octet buffer */
 {
@@ -1256,7 +1259,7 @@ void DECLARE(AutoLm) AutoLmPwdToKeyMd5(
 void DECLARE(AutoLm) AutoLmPwdToKeySha(
   const char *password,  /* IN */
   int passwordlen, /* IN */
-  ui8 *locstr,   /* IN  - pointer to unique ID  */
+  const ui8 *locstr,   /* IN  - pointer to unique ID  */
   ui32 locstrlen,  /* IN  - length of unique ID */
   ui8 *key)      /* OUT - pointer to caller 20-octet buffer */
 {
