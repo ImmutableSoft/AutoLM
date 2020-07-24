@@ -1114,50 +1114,46 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
            strVendorPassword, nVendorPasswordStrLength);
     return -1;
   }
-  else
+
+  //convert escape chars in password \char to char hex value
+  int j = 0;
+  int nPwdLength = 0;
+  for (int i = 0; i < (int)nVendorPasswordStrLength; i++)
   {
-    //convert escape chars in password \char to char hex value
-    int j = 0;
-    int nPwdLength = 0;
-    for (int i = 0; i < (int)nVendorPasswordStrLength; i++)
+    if (strVendorPassword[i] == '\\')
     {
-      if (strVendorPassword[i] != '\\')
+      i++;
+      if (isdigit(strVendorPassword[i]))
       {
-        byteResult[j++] = strVendorPassword[i];
+        byteResult[j++] = char(strVendorPassword[i] - 0x30);// 0x30 - 0
+      }
+      else if (isxdigit(strVendorPassword[i]))
+      {
+        if (isupper(strVendorPassword[i]))
+          byteResult[j++] = char(strVendorPassword[i] - 0x41 + 10); // 0x65 - A
+        else
+          byteResult[j++] = char(strVendorPassword[i] - 0x61 + 10); // 0x61 - a
       }
       else
       {
-        i++;
-        if (isdigit(strVendorPassword[i]))
-        {
-          byteResult[j++] = char(strVendorPassword[i] - 0x30);// 0x30 - 0
-        }
-        else if (isxdigit(strVendorPassword[i]))
-        {
-          if (isupper(strVendorPassword[i]))
-          {
-            byteResult[j++] = char(strVendorPassword[i] - 0x41 + 10); // 0x65 - A
-          }
-          else
-          {
-            byteResult[j++] = char(strVendorPassword[i] - 0x61 + 10); // 0x61 - a
-          }
-        }
-        else
-        {
-          printf("vendorPassword char not valid decimal or hex number - '%c'\n",
-            strVendorPassword[i]);
-          return -1;
-        }
+        printf("vendorPassword char not valid decimal or hex number - '%c'\n",
+          strVendorPassword[i]);
+        return -1;
       }
-      nPwdLength++;
     }
-    nVendorPwdLength = nPwdLength;
+    else
+      byteResult[j++] = strVendorPassword[i];
+
+    nPwdLength++;
   }
+
+  nVendorPwdLength = nPwdLength;
+
+#if AUTOLM_DEBUG
   PRINTF("vendorPassword - '%s', vendorPwdLength = %d\n", strVendorPassword,
          nVendorPasswordStrLength);
-
   PRINTF("vendorPassword - [");
+
   for (int i = 0; i < nVendorPwdLength; i++)
   {
     if (byteResult[i] > 15)
@@ -1180,6 +1176,8 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
            nVendorPwdLength);
     return -1;
   }
+  #endif
+
   return nVendorPwdLength;
 }
 

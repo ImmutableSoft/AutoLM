@@ -78,22 +78,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\$(ProjectName).dir\</IntDir>
     <OutDir>$(SolutionDir)build\validate\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
@@ -176,7 +176,7 @@
       </IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\;;$(SolutionDir)\curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\lib\$(Platform)\$(Configuration)\;$(SolutionDir)\curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

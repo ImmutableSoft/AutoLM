@@ -103,10 +103,10 @@ enum AutoLmResponse
 */
 typedef struct AutoLmConfig
 {
-  char vendor[21];
+  char vendor[128];
   size_t vendorlen;
   ui64 vendorid;
-  char product[21];
+  char product[128];
   size_t productlen;
   ui64 productid;
   ui8 password[21];
