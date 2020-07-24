@@ -1,11 +1,12 @@
 // TestApplication.cpp : Defines the entry point for the application.
 //
-
-#include "framework.h"
-#include "TestApplication.h"
-#include "autolm.h"
 #include <string.h>
 #include <stdio.h>
+#include "autolm.h"
+#include "windows.h"
+#ifndef _UNIX
+#include "framework.h"
+#include "TestApplication.h"
 
 #define MAX_LOADSTRING 100
 
@@ -85,21 +86,20 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
     return RegisterClassExW(&wcex);
 }
+#endif /* _UNIX */
 
 int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
 {
-  char* binaryPathLinux = (char*)"/usr/bin/google-chrome";
-  char* binaryPathWin = (char*)"chrome.exe";
   char bufLink[200];
   char bufLaunch[250];
-  sprintf_s(bufLink, 200, "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=1",
+  sprintf(bufLink, "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=1",
     vendorIdStr, productIdStr, buyUniqueId);
   printf("bufLink - '%s'\n", bufLink);
 
-  sprintf_s(bufLaunch, 250, "start chrome.exe \"%s\"", bufLink);
+  sprintf(bufLaunch, "start chrome.exe \"%s\"", bufLink);
   printf("bufLaunch - '%s'\n", bufLaunch);
   int n = 0;
-#ifndef _WIN32
+#ifdef _UNIX
   sprintf(bufLaunch, "/usr/bin/google-chrome \"%s\"", bufLink);
   printf("lanching '%s'\n", bufLaunch);
   n = system(bufLaunch);
@@ -116,6 +116,7 @@ int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
 #define INFURA_PROJECT_ID "6233914717a744d19a2931dfbdd3dddc"
 #define LICENSE_FILE      "./license.elm"
 
+#ifndef _UNIX
 //
 //   FUNCTION: InitInstance(HINSTANCE, int)
 //
@@ -140,18 +141,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+#else /* ifndef _UNIX */
 
+int main()
+{
+#endif /* ifndef _UNIX */
    AutoLm *lm = new AutoLm();
    if (lm)
    {
      const char* vendorName = "CreatorAuto1"; //From Immutable Ecosystem
      ui64 vendorId = 3; // From Immutable Ecosystem, static per application
      char vendorIdStr[21];
-     sprintf_s(vendorIdStr, 20, "%llu", vendorId);
+     sprintf(vendorIdStr, "%llu", vendorId);
      const char* product = "GameProduct";
      ui64 productId = 1; // From Immutable Ecosystem, static per application
      char productIdStr[21];
-     sprintf_s(productIdStr, 20, "%llu", productId);
+     sprintf(productIdStr, "%llu", productId);
 
      char vendorPassword[20 + 1];
      unsigned int nVendorPwdLength;
@@ -194,15 +199,36 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
      // If license is not valid then exit the application
      if (licenseStatus != licenseValid)
      {
+#ifndef _UNIX
        // Not activated, close the application
        DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
        return FALSE;
+#else /* ifndef _UNIX */
+       puts("This application requires an activation validated on the Immutable Ecosystem.");
+       puts("\nYour browser (Chrome) was opened to the Immutable Ecosystem");
+       puts("license activation purchase page for this application, passing");
+       puts("your unique activation identifier. Please Purchase the activation");
+       puts("from the Ecosystem to unlock this application running on your PC.");
+       return -1;
+#endif /* ifndef _UNIX */
      }
    }
 
+   // Return error if 'new' does not work, improper build?
+   else
+     return FALSE;
+
+   // Application activation verified, unlock and return success
+#ifndef _UNIX
    return TRUE;
+#else
+   puts("TestApplication activated and license verified.");
+   puts("\n  TestApplication ready to use");
+   return 0;
+#endif
 }
 
+#ifndef _UNIX
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -270,3 +296,4 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+#endif /* ifndef _UNIX */

@@ -1021,7 +1021,7 @@ int DECLARE(AutoLm) AutoLmStringToHex(const char *hexstring, ui8 *result)
 /***********************************************************************/
 int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
 {
-  char infoString[201];
+  char infoString[308];
   char hashtext[42 + 1];
   ui8 hashstr[20];
   int i, hostidlen;

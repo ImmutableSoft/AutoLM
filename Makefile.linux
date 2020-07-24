@@ -25,8 +25,8 @@ LINK = /bin/sh /usr/bin/libtool --mode=link c++
 ## Definitions:
 ##
 # need -DCURL_STATICLIB for static build
-EXTRAS = -ggdb -O0 -DCURL_STATICLIB
-#EXTRAS = -O3 -fexpensive-optimizations -DCURL_STATICLIB
+EXTRAS = -ggdb -O0 -DCURL_STATICLIB -D_UNIX
+#EXTRAS = -O3 -fexpensive-optimizations -DCURL_STATICLIB -D_UNIX
 
 CPPFLAGS = -Wall $(EXTRAS)
 CFLAGS = -Wall $(EXTRAS)
@@ -40,33 +40,36 @@ INCLUDES = -I"." -I"./base" \
 LIBAUTO = \
 	base/sha1.o \
 	base/md5.o \
-	compid.o \
+	CompId.o \
 	autolm.o
 
 COMPID = \
-	compid.o
+	CompId.o
 
 VALIDATE = \
 	base/sha1.o \
 	base/md5.o \
-	compid.o \
+	CompId.o \
 	autolm.o
+
+TESTAPPLICATION = \
+	./TestApplication/TestApplication.o
 
 ACTIVATE = \
 	base/sha1.o \
 	base/md5.o \
-	compid.o \
-	activate.o
+	CompId.o \
+	Activate.o
 
 # Replace -lcurl below with custom build
 CURLLIB = -lcurl
 
 # The name of library output file (static libautolm.a)
-#AUTOLIB = ./libautolm.a
 AUTOLIB = ./libautolm.so
-COMPIDEXE = ./compid.exe
-ACTIVATEEXE = ./activate.exe
-VALIDATEEXE = ./validate.exe
+COMPIDEXE = ./CompId
+ACTIVATEEXE = ./activate
+VALIDATEEXE = ./validate
+TESTAPPLICATIONEXE = ./TestApplication/TestApplication
 
 # Static build
 #LDFLAGS = -fPIC -static
@@ -93,34 +96,39 @@ LIBS = -lstdc++
 ##CFLAGS = $(CFLAGS) -ggdb
 ##		CPPFLAGS = $(CPPFLAGS) -ggdb
 
-all:		libauto compid validate activate
+all:		libauto compid validate testapplication activate
 
 # To create a static library change this below
 #	$(CPP) $(CPPFLAGS) -static \
 
+#	-Wl,--whole-archive $(CURLLIB) -Wl,--no-whole-archive \
+
 libauto: $(LIBAUTO)
 	$(CPP) $(CPPFLAGS) -shared \
                 -o $(AUTOLIB) \
-                $(LIBAUTO) $(CURLLIB) \
+                $(LIBAUTO) \
+                $(CURLLIB) \
                 $(LDFLAGS) $(LIBS)
+	$(AR) rcs libautolm.a $(LIBAUTO)
 
 compid: $(COMPID)
-	$(CPP) -o $(COMPIDEXE) -D_STANDALONE compid.cpp \
-                   -lstdc++
+	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE -Wno-multichar CompId.cpp \
+                -lstdc++
 
 validate: $(VALIDATE)
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(VALIDATEEXE) validate.cpp \
 	               $(VALIDATE) \
-                   -lcurl -lssl -lcrypto -lstdc++ -lz
+                 -lcurl -lssl -lcrypto -lstdc++ -lz
+
+testapplication: $(TESTAPPLICATION)
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(TESTAPPLICATIONEXE) \
+                 $(TESTAPPLICATION) \
+                 -L. -lautolm -lcurl -lssl -lcrypto -lstdc++ -lz
 
 activate: $(ACTIVATE)
 	$(CPP) $(CPPFLAGS) -D_CREATEONLY $(INCLUDES) -o $(ACTIVATEEXE) autolm.cpp \
 	               $(ACTIVATE) \
-                   -lstdc++
-
-
-#	$(CPP) $(CPPFLAGS) -o $(ACTIVATEEXE) $(ACTIVATE) \
-                 -mwindows -lstdc++
+                 -lstdc++
 
 # For libcurl static, remaning shared
 #				-Wl,--whole-archive \
