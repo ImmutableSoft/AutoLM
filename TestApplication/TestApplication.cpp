@@ -2,6 +2,7 @@
 //
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #include "autolm.h"
 #include "windows.h"
 #ifndef _UNIX
@@ -28,7 +29,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+    //OutputDebugString(L"*** TestApplication");
 
+    FILE* fp;
+    AllocConsole();
+    freopen_s(&fp, "CONIN$", "r", stdin);
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    freopen_s(&fp, "CONOUT$", "w", stderr);
     // TODO: Place code here.
 
     // Initialize global strings
@@ -99,7 +106,7 @@ int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
   sprintf(bufLaunch, "start chrome.exe \"%s\"", bufLink);
   printf("bufLaunch - '%s'\n", bufLaunch);
   int n = 0;
-#ifdef _UNIX
+#ifndef _WINDOWS
   sprintf(bufLaunch, "/usr/bin/google-chrome \"%s\"", bufLink);
   printf("lanching '%s'\n", bufLaunch);
   n = system(bufLaunch);
@@ -116,7 +123,12 @@ int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
 #define INFURA_PROJECT_ID "6233914717a744d19a2931dfbdd3dddc"
 #define LICENSE_FILE      "./license.elm"
 
+// Global variables
+static char s_bufValidate[100];
+static bool s_bValidated = false;
+
 #ifndef _UNIX
+
 //
 //   FUNCTION: InitInstance(HINSTANCE, int)
 //
@@ -149,10 +161,12 @@ int main()
    AutoLm *lm = new AutoLm();
    if (lm)
    {
-     const char* vendorName = "CreatorAuto1"; //From Immutable Ecosystem
-     ui64 vendorId = 3; // From Immutable Ecosystem, static per application
-     char vendorIdStr[21];
-     sprintf(vendorIdStr, "%llu", vendorId);
+     // Reconfigure entity and product below to match Ecosystem
+     const char* entityName = "CreatorAuto1"; //From Immutable Ecosystem
+     ui64 entityId = 3; // From Immutable Ecosystem, static per application
+     char entityIdStr[21];
+
+     sprintf(entityIdStr, "%llu", entityId);
      const char* product = "GameProduct";
      ui64 productId = 1; // From Immutable Ecosystem, static per application
      char productIdStr[21];
@@ -169,7 +183,7 @@ int main()
      ui64 resultingValue;
      int licenseStatus;
 
-     lm->AutoLmInit(vendorName, vendorId, product, productId, 3,
+     lm->AutoLmInit(entityName, entityId, product, productId, 3,
        vendorPassword, nVendorPwdLength, NULL, infuraId);
      for (;;)
      {
@@ -177,6 +191,9 @@ int main()
          &exp_date, buyHashId, &resultingValue))
        {
        case licenseValid:
+           s_bValidated = true;
+           sprintf(s_bufValidate, "Activation for GameProduct expires on %s", ctime(&exp_date));
+           printf("%s\n", s_bufValidate);
          break;
        case noLicenseFile:
        {
@@ -188,7 +205,7 @@ int main()
        }
        case blockchainExpiredLicense:
          // launch browser to purchase from Immutable
-         launchBuyDialog(vendorIdStr, productIdStr, buyHashId);
+         launchBuyDialog(entityIdStr, productIdStr, buyHashId);
          break;
        default:
          break;
@@ -212,6 +229,15 @@ int main()
        return -1;
 #endif /* ifndef _UNIX */
      }
+     else
+     {
+         // activated
+#ifndef _UNIX
+         DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+#else /* ifndef _UNIX */
+       puts("TestApplication for this PC was validated on the Immutable Ecosystem.");
+#endif /* ifndef _UNIX */
+     }
    }
 
    // Return error if 'new' does not work, improper build?
@@ -222,7 +248,6 @@ int main()
 #ifndef _UNIX
    return TRUE;
 #else
-   puts("TestApplication activated and license verified.");
    puts("\n  TestApplication ready to use");
    return 0;
 #endif
@@ -284,6 +309,15 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG:
+        if (s_bValidated == true)
+        {
+            //OutputDebugString(L"************");
+            wchar_t wBuf[100];
+            size_t n;
+            mbstowcs_s(&n, wBuf, s_bufValidate, 100);
+            SetDlgItemText(hDlg, IDC_STATIC_MSG_VALIDATED, wBuf);
+            SetDlgItemText(hDlg, IDC_STATIC_MSG_VALIDATED_2, L"This application activation was validated on the Immutable Ecosystem");
+        }
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
