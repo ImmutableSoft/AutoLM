@@ -1,192 +1,103 @@
 
-# Building AutoLM and dependencies
-
-Automatic License Manager build and installation instructions.
-
-AutoLM requires libcurl. Depending on your OS, application
-and what you need to link the AutoLM library with, choose
-path 1 or 2 below. Path 1 is for Unix applications such as
-Linux, MSYS2, MacOS and others. Path 2 is for applications
-that are built with Windows and Visual Studio.
-
-## To install curl for Unix (Linux/MSYS2/MacOS)
-
-Distribution dependent, but install libcurl development.
-This method bypasses the need to install and build
-curl so there is no need to run git submodules init and update.
-Examples to install libcurl development are below.
-
-### Debian
-
-Curl requires OpenSSL (or similar) development so be sure the OpenSSL
-development environment is installed and available.
-
-```
-sudo apt-get install openssl-devel
-sudo apt-get install libcurl-dev
-```
-
-### MSYS2
-
-Curl on MSYS2, especially when using SSL, has many dependencies. Note
-that if you choose the minimum build below, not all of these are needed.
-
-```
-pacman -S openssl
-pacman -S openssl-devel
-pacman -S brotli-devel
-pacman -S zlib-devel
-pacman -S ca-certificates
-pacman -S libcurl-devel
-```
-
-If your OS does not support a libcurl development you will need to
-download, build and install it as described in the next section.
-
-## To download and build libcurl
-
-AutoLM depends on curl as a submodule. Perform the commands below
-to clone (download) the latest curl code into your build tree.
-
-```
-git submodule init
-git submodule update
-```
-
-### Visual Studio 2019
-
-To build libcurl for both x86 and x64 platforms, please
-complete both sections below. If you only need support for
-one platform then only that section needs to be completed.
-If you do not complete both sections below then not all
-build configurations for AutoLM solution will link correctly.
-
-First, configure the build environment after cloning (not
-required if installing release zip, only if a fresh clone).
-From the Start (bottom left Windows button) search field,
-open the application "Developer Command Prompt for VS 2019".
-Move into the curl directory (cd AutoLM/curl)
-within this Developer Command Prompt and configure the
-repository by running the buildconf.bat command.
-
-```
-cd curl
-buildconf.bat
-```
-
-## x86
-
-From the Start (bottom left Windows button) search field,
-open the application "Developer Command Prompt for VS 2019"
-and then move to the winbuild folder and building with nmake.
-
-```
-cd winbuild
-nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
-```
-
-This will create libcurl_a.lib in the folder
-curl\builds\libcurl-vc19-x86-release-static-ipv6-sspi-winssl\lib
-
-## x64
-
-From the Start (bottom left Windows button) search field,
-open the application "x64 Native Tools Command Prompt for VS 2019"
-and then move to the winbuild folder and building with nmake.
-
-```
-cd winbuild
-nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
-```
-
-This will create libcurl_a.lib in the folder
-curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib
-
-### Linux
-
-To configure, make and install the default libcurl installation,
-use these commands in the curl directory (installed with
-git submodule update).
-
-
-```
-cd curl
-./configure --with-ssl
-make install
-```
-
-<b>Alternatively</b>, to configure, make and install the minimum
-libcurl installation that works with AutoLM, use these commands.
-
-```
-cd curl
-./configure --with-ssl --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp  --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-manual --without-brotli --without-zlib --disable-progress-meter  --disable-dnsshuffle
-make
-make install
-```
-
-# Building AutoLM
-
-Now that libcurl is built and its library is available,
-it is time to build AutoLM.
-
-## Building with Visual Studio
-
-Open the solution file AutoLM.sln, select the build type (x86
-or x64) and configuration (Debug or Release) and rebuild the solution.
-
-## Building for Unix
-
-For Unix systems the Makefile.msys2 and Makefile.linux and Makefile.macos
-can be used based on your OS. If the example does not link with a
-particular OS, please be sure to check the libraries for your OS match
-those in the Makefile. Please submit a PR if desired for new Makefiles.
-
-Windows MSYS2 and MinGW
-```
-make -f Makefile.msys2 clean
-make -f Makefile.msys2
-```
-
-Linux and GCC
-```
-make -f Makefile.linux clean
-make -f Makefile.linux
-```
-
-MacOS and GCC
-```
-make -f Makefile.macos clean
-make -f Makefile.macos
-```
-
 # Using AutoLM Overview
 
-The Automated License Manager, or AutoLM, empowers software
-creators with sales distribution and automation. Utilizing
-the Immutable Ecosystem (ie. Immutable), AutoLM automates the
-sales and license activation and distribution processes.
+Welcome to the future of automated digital product sales
+and activation! We believe software creators should be
+in control of and directly compensated for their creations.
+We believe software users should be in control of their
+purchased product activations and should know their payment
+goes directly to the creator of the products they purchase.
+We further our goal for the future of software sales and
+distribution to be open and decentralized with the introduction
+of the Automated License Manager, or AutoLM.
+
+Together with a software creator presence on the
+[Immutable Ecosystem](https://ecosystem.immutablesoft.org),
+the AutoLM empowers software creators with sales distribution
+and automation. Leveraging the monetizable, decentralized and
+immutable Ethereum database, AutoLM is able to automate
+sales processes within a creator controlled license activation
+and distribution ecosystem (ie. the Immutable Ecosystem).
 
 AutoLM is an open source and commercial friendly (MIT license)
 example of a secure license activation library that is
 compatible with Immutable. The goals of AutoLM are to
 be easy to use while following security best practices.
 
+AutoLM is built (see [INSTALL.md](./INSTALL.md)) as a
+C++ library to be linked together with the software or digital
+creation to be licensed/sold. For cloud/server and/or scripting
+language support there is optionally a set of command line
+tools available for use.
+
 When built/linked/integrated together with the digital
-product that is to be licensed, this library can perform
-three actions. These actions are also available as command
-line tools for testing and integration with non-compiled software
-languages.
+product that is to be licensed, AutoLM will enforce that a
+purchased product license activation is in fact valid on the 
+blockchain. The security of AutoLM works by utilizing a
+globally unique, read only PC/OS identifier and cryptographically
+tying it together with the unique entity and product information,
+including a secret password from the software creator. This
+process yields a unique activation identifier that is then 
+used to identify if the installed software is 'active' and was
+purchased on the Immutable Ecosystem.
+
+AutoLM is designed to be integrated in one of two ways; standalone
+or server assisted. Standalone used the installed software
+application to create an initial local license activation file.
+It is the simplest to deploy and is the basis for this
+Quick Use Guide next. Server assisted moves the local license
+file creation process to a secure server the creator controls
+(JSON/REST interface, etc.). This gives additional security as
+well as control to the license distribution process and can be
+tied into the end user registration requirements of the
+software creator. All the while still maintaining automation
+of the process.
 
 # Quick Use Guide
 
-## Using C/C++
+## Using libautolm, the C/C++ library
 
-First initialize entity name, product, mode and password by
-calling AutoLMInit(), then AutoLmValidateLicense(). If
-noLicenseFound error, create a local activation with
-AutoLmCreateLicense(). Then call AutoLmValidateLicense()
-again.
+The first step to using the AutoLM library is to initialize
+it with the entity and product information, as represented
+on the Immutable Ecosystem. If you have not created an Entity
+on Immutable you can test with one of the product examples on the
+Ropsten testnet (ie. leave code unchanged). With the entity and
+product reference from Immutable, call AutoLmInit() with a private
+mode and password to initialize the library.
+
+Once initialize the AutoLm object can be used to validate
+a license file or create a local license activation file.
+For a standalone situation usually AutoLmValidateLicense() is
+called to start and if it returns a noLicenseFound error,
+then the application creates a local activation with
+AutoLmCreateLicense() before calling AutoLmValidateLicense()
+again. On the second call to AutoLmValidateLicense() the
+Ethereum database will be checked and if a new install the
+blockchainExpiredLicense error will be returned, indicating
+that this activation is not purchased/valid.
+
+At this point the application can choose to handle the situation
+however it pleases. At a minimum the application should display a
+dialog box displaying the activation identifier and a link to the
+Immutable Ecosystem. A better option is to provide an embedded
+link into the Immutable Ecosystem that will open the purchase
+activation page for that product with the end users activation
+identifier auto populated for a 'one-click' purchase experience.
+
+To integrate AutoLM into other payment options besides Immutable
+there are two options, upgrade to EasyLM for a full license
+management suite (contact ImmutableSoft for more information) or
+have your sales process create activations within the Immutable
+Ecosystem on behalf of your paying customers.
+
+Below is the standalone example to launch the Immutable Ecosystem
+with a link to an auto populated page for a 'one-click' customer
+purchase experience. The parameters include the entity and
+product id's as well as the end users activation identifier -
+from the installed software local license file. The purchase page
+URL into the Immutable Dapp is returned in purchaseUrl, which
+may be useful (by the user and/or application) if the launch of
+the Chrome browser to open the URL fails.
 
 ```
 /***********************************************************************/
@@ -244,12 +155,17 @@ int launchPurchaseDialog(ui64 entityId, ui64 productId,
   // Return system() call result (zero on success)
   return n;
 }
+```
+To complete the standalone integration of AutoLM, below is the code
+from the TestApplicaiton example included in Git repository. Note that
+the AutoLmValidateLicense() function returns the result as well as the
+expiration of the activation identifier as store on the block chain. It
+also populates the activation identifier needed to purchase from Immutable
+if the error blockchainExpiredLicense si returned.
 
-...
+```
 int main()
 {
-  ...
-
    // Allocate the Automatic License Manager object
    AutoLm *lm = new AutoLm();
    if (lm)
@@ -330,28 +246,50 @@ int main()
        }
        return -1;
      }
-  ...
+   }
+
+   // Start application as it has a valid license
+   ...
 }
 ```
 
-To aid integration with scripting languages (Python, Perl, Tcl,
-etc.), the following command line tools are created when AutoLM
-is built; 'compid', 'activate' and 'validate'. The 'compid' is
-used by an application for troubleshooting or when a server
-call is required to 'activate' as the computer id must be
-passed from the PC executing the software to the server creating
-the license file. The 'activate' command creates a local
-license (file) using the detected OS/PC computer id and the
-application details (names, ids, secret). The 'validate' call
-requires a previously created local license (file) and uses
-libcurl to validate the license on the Ethereum network. Validate
-returns a string representing the license activation value. Any
-number greater than zero is active, any number greater than one (1)
+Be sure to link your application with AutoLm (-lautolm) as well
+as any dependencies (curl, openssl, etc.). See the TestApplication
+for an example of the these for your build environment.
+
+# Command Tools for Scripting Languages
+
+Due to the insecurity of passing parameters within
+a scripting language, and the fact that AutoLm requires
+a password as said parameter, scripting language applications of
+AutoLM should be limited to servers which the creator
+controls. Otherwise a keystore should be deployed (AWS, etc.)
+to store the password and this keystore be kept under control
+of the software creator. Alternatively, and only if supported
+by the scripting language, bytecode may be generated for the
+portion of the application that is to perform the license
+activation check.
+
+## Overview of Command Line Tools
+
+To aid testing, debugging and integration with scripting
+languages (Python, Perl, Tcl, etc.), the following command
+line tools are created when AutoLM is built; 'compid', 'activate'
+and 'validate'. The 'compid' is used by an application for
+troubleshooting or when a server call is required to 'activate'
+as the computer id must be passed from the PC executing the
+software to the server creating the license file.
+
+The 'activate' command creates a local license (file) using
+the detected OS/PC computer id and the application details
+(names, ids, secret). The 'validate' call requires a previously
+created local license (file) and uses libcurl to validate the
+license on the Ethereum network. Validate returns a string
+representing the license activation value. Any number greater
+than zero is active, any number greater than one (1)
 is application specific (ie. an application feature or item).
 
-# AutoLM Features
-
-## Globally Unique and Immutable Identifier
+## CompId - Globally Unique and Immutable Identifier
 
 The foundation of AutoLM is the globally unique and immutable
 identifier (computer id). From the physical hardware executing
@@ -379,7 +317,7 @@ $ ./compid
 0x313fc746359696cb41a3a4adb663c6fb
 ```
 
-## Secure Unique Activation Install 
+## Activate - Secure Unique Local Activation Install
 
 The second action of the library is creating local license
 activations for a particular user/system and product.
@@ -406,7 +344,7 @@ license activation file is below.
 ./activate Mibtonix 3 Mibpeek 0 3 Passw\\0rd 0x5adb663c6fbb41a3a43fc74319696c63 ./license.elm
 ```
 
-## Secure Activation Validation
+## Validate - Secure Blockchain Validation of Local Activation
 
 The third action of the library validates a local activation
 license (ensures computer id and hash match) and then
