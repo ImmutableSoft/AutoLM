@@ -1,23 +1,31 @@
 
-# Using AutoLM Overview
+# AutoLM Introduction
 
 Welcome to the future of automated digital product sales
 and activation! We believe software creators should be
 in control of and directly compensated for their creations.
-We believe software users should be in control of their
-purchased product activations and should know their payment
+We believe software users want to be in control of their
+purchased product activations as well as know their payment
 goes directly to the creator of the products they purchase.
-We further our goal for the future of software sales and
-distribution to be open and decentralized with the introduction
-of the Automated License Manager, or AutoLM.
+[ImmutableSoft Inc.](https://immutablesoft.org/) furthers
+their goal of a future where software sales and distribution
+are open and decentralized with the introduction of the
+Automated License Manager, or AutoLM. Coupled with the
+a decentralized and publicly audit-able resale ecosystem,
+digital product activations are transformed into digital
+assets of increased value, while increasing overall
+afford-ability and desirability.
 
 Together with a software creator presence on the
 [Immutable Ecosystem](https://ecosystem.immutablesoft.org),
-the AutoLM empowers software creators with sales distribution
-and automation. Leveraging the monetizable, decentralized and
-immutable Ethereum database, AutoLM is able to automate
-sales processes within a creator controlled license activation
-and distribution ecosystem (ie. the Immutable Ecosystem).
+the AutoLM empowers the software creators application with
+sales distribution and automation. Leveraging the
+monetizable, decentralized and immutable Ethereum database,
+AutoLM is able to automate the sales and/or activation processes
+within a creator controlled license activation and
+distribution ecosystem (ie. the Immutable Ecosystem).
+
+# AutoLM Overview
 
 AutoLM is an open source and commercial friendly (MIT license)
 example of a secure license activation library that is
@@ -255,7 +263,11 @@ int main()
 
 Be sure to link your application with AutoLm (-lautolm) as well
 as any dependencies (curl, openssl, etc.). See the TestApplication
-for an example of the these for your build environment.
+for an example of the these for your build environment. More
+details on AutoLM is described below when discussing the command line
+tools. In general, the Activate command uses AutoLmInit() and
+AutoLmCreateLicense() within the AutoLm library, while the Validate
+command uses AutoLmInit() and AutoLmValidateLicense().
 
 # Command Tools for Scripting Languages
 
@@ -358,7 +370,12 @@ Ecosystem and are distinguished by their Activation
 Value. At no time after purchase can this Value be changed.
 
 An example using the 'validate' command line tool to verify a
-license activation file with the Ethereum database is below.
+license activation file with the Ethereum database is below. Note
+that the Infura Product Id (d3dddc6...1) is not a valid Infura Id.
+Please register you or your organization with
+[Infura](https://infura.io) to receive your own unique product
+identifier that should be used within your application for product
+validations.
 
 ```
 ./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
