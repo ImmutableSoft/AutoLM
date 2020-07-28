@@ -1,5 +1,6 @@
+![image entity](./images/Immutable_BlueOnWhite_Logo.png)
 
-# AutoLM Introduction
+# <img src="./images/AutoLm.png" alt="autolm" width="100" height="100"/> AutoLM Introduction
 
 Welcome to the future of automated digital product sales
 and activation! We believe software creators should be
@@ -10,16 +11,17 @@ goes directly to the creator of the products they purchase.
 [ImmutableSoft Inc.](https://immutablesoft.org/) furthers
 their goal of a future where software sales and distribution
 are open and decentralized with the introduction of the
-Automated License Manager, or AutoLM. Coupled with the
-a decentralized and publicly audit-able resale ecosystem,
+Automated License Manager, or AutoLM. Coupled with a
+decentralized and publicly audit-able resale ecosystem,
 digital product activations are transformed into digital
 assets of increased value, while increasing overall
 afford-ability and desirability.
 
 Together with a software creator presence on the
 [Immutable Ecosystem](https://ecosystem.immutablesoft.org),
-the AutoLM empowers the software creators application with
-sales distribution and automation. Leveraging the
+the AutoLM empowers a software creators' application with
+sales distribution and automation, creating a valuable digital
+activation asset for each end user who purchases. Leveraging the
 monetizable, decentralized and immutable Ethereum database,
 AutoLM is able to automate the sales and/or activation processes
 within a creator controlled license activation and
@@ -401,3 +403,5 @@ activation they can navigate to the Immutable Activations page
 and update their activation identifier to the new value.
 Applications with many features may wish to consider a bulk
 migration feature.
+
+![image entity](./images/Immutable_BlueOnWhite_Logo.png)
