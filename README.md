@@ -189,32 +189,60 @@ AutoLmCreateLicense(). Then call AutoLmValidateLicense()
 again.
 
 ```
-int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
+/***********************************************************************/
+/* launchPurchaseDialog: Launch Dapp to activation purchase page       */
+/*                                                                     */
+/*      Inputs: entityId = entity ID static in Immutable Ecosystem     */
+/*              productId = product ID static in Immutable Ecosystem   */
+/*              activationId = local activation identifier to activate */
+/*                             in hex string format                    */
+/*      Output: purchaseUrl = the resulting URL to open purchase page  */
+/*                                                                     */
+/*     Returns: result of execution (launch), zero if success          */
+/*                                                                     */
+/***********************************************************************/
+int launchPurchaseDialog(ui64 entityId, ui64 productId,
+                         const char* activationId, char *purchaseUrl)
 {
-    char* binaryPathLinux = (char*)"/usr/bin/google-chrome";
-    char* binaryPathWin = (char*)"chrome.exe";
-    char bufLink[200];
-    char bufLaunchWin[250];
-    char bufLaunchLinux[250];
-    sprintf(bufLink, "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=1",
-        vendorIdStr, productIdStr, buyUniqueId);
-    printf("bufLink - '%s'\n", bufLink);
+  char bufLink[200];
+  char bufLaunch[250];
+  char entityIdStr[21];
+  char productIdStr[21];
 
-    sprintf(bufLaunchWin, "start chrome.exe \"%s\"", bufLink);
-    printf("bufLaunchWin - '%s'\n", bufLaunchWin);
-    int n = 0;
-#ifndef _WIN32
-    sprintf(bufLaunchLinux, "/usr/bin/google-chrome \"%s\"", bufLink);
-    printf("lanching '%s'\n", bufLaunchLinux);
-    n = system(bufLaunchLinux);
-    printf("n = %d\n", n);
+  // Convert the entity and product IDs to string equivalent
+  sprintf(entityIdStr, "%llu", entityId);
+  sprintf(productIdStr, "%llu", productId);
+
+  // Create the purchaseUrl result string if not NULL
+  if (purchaseUrl)
+  {
+    sprintf(purchaseUrl,
+      "https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=0",
+      entityIdStr, productIdStr, activationId);
+  }
+
+  // Create the URL with -app parameter for passing to the Chrome browser
+  sprintf(bufLink,
+    "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=0",
+    entityIdStr, productIdStr, activationId);
+  PRINTF("bufLink - '%s'\n", bufLink);
+
+  sprintf(bufLaunch, "start chrome.exe \"%s\"", bufLink);
+  PRINTF("bufLaunch - '%s'\n", bufLaunch);
+  int n = 0;
+#ifndef _WINDOWS
+  sprintf(bufLaunch, "/usr/bin/google-chrome \"%s\"", bufLink);
+  PRINTF("lanching '%s'\n", bufLaunch);
+  n = system(bufLaunch);
+  PRINTF("n = %d\n", n);
 #else
-    printf("lanching '%s'\n", bufLaunchWin);
-    n = system(bufLaunchWin);
+  PRINTF("lanching '%s'\n", bufLaunch);
+  n = system(bufLaunch);
 #endif
-    printf("n = %d\n", n);
+  PRINTF("n = %d\n", n);
 
-    return n;
+  // Return system() call result (zero on success)
+  return n;
 }
 
 ...
@@ -222,67 +250,86 @@ int main()
 {
   ...
 
-  AutoLM autoLM = new AutoLm();
-  if(autoLM)
-  {
-    const char* vendorName = "MyEntity"; //From Immutable Ecosystem
-    ui64 vendorId = 3; // From Immutable Ecosystem, static per application
-    char vendorIdStr[21];
-    sprintf(vendorIdStr, "%llu", vendorId);
-    const char* product = "MyApplication";
-    ui64 productId = 0; // From Immutable Ecosystem, static per application
-    char productIdStr[21];
-    sprintf(productIdStr, "%llu", productId);
+   // Allocate the Automatic License Manager object
+   AutoLm *lm = new AutoLm();
+   if (lm)
+   {
+     time_t exp_date = 0;
+     ui64 resultingValue;
+     int licenseStatus;
+     char vendorPassword[20 + 1];
+     char buyHashId[44] = "";
+     char purchaseUrl[244] = "";
+     unsigned int nVendorPwdLength;
 
-    char vendorPassword[20 + 1];
-    unsigned int nVendorPwdLength;
-    nVendorPwdLength = autoLM->AutoLmPwdStringToBytes("MyPassw\\0rd", vendorPassword);
+     // Reconfigure entity and product below to match Ecosystem
+     const char* entityName = "CreatorAuto1"; //From Immutable Ecosystem
+     const char* product = "GameProduct";
+     ui64 entityId = 3; // From Immutable Ecosystem, static per application
+     ui64 productId = 1; // From Immutable Ecosystem, static per application
 
-    char buyHashId[44] = "";
-    const char* infuraId = INFURA_PROJECT_ID; // From https://infura.io
-    time_t exp_date = 0;
-	  ui64 resultingValue;
-    int licenseStatus;
+     // Populate the Infura ID with your specific id
+     const char* infuraId = INFURA_PROJECT_ID; // From https://infura.io
 
-    autoLM->AutoLmInit(vendorName, vendorId, product, productId,
-	                     3, vendorPassword, nVendorPwdLength, NULL,
-                       infuraId);
-    for (;;)
-    {
-      switch(licenseStatus = autoLM->AutoLmValidateLicense(lic_file,
-                                &exp_date, buyHashId, &resultingValue))
-      {
-        case licenseValid:
-          break;
-			  case noLicenseFile:
-			  {
-					  int created = autoLM->AutoLmCreateLicense(lic_file);
-					  if (created >= 0)
-					  {
-						  result[0] = '\0';
-						  continue; // Call Validate again after creating
-					  }
-					  else
-					    sprintf(result, "%s\nBlockchain license creation failed %d", result, created);
-			  }
-        case blockchainExpiredLicense:
-      			// launch browser to purchase from Immutable
-            launchBuyDialog(vendorIdStr, productIdStr, buyHashId);
-            break;
-        default:
-          break;
-      }
-      break;
-    }
+     // Populate the password by converting the string to bytes
+     nVendorPwdLength = lm->AutoLmPwdStringToBytes("ThePassw\\0rd",
+                                                   vendorPassword);
 
-    // If license is not valid then exit the application
-    if (licenseStatus != licenseValid)
-    {
-      // Not activated, close the application
-      printf("Activation for %s failed with %d\n", buyHashId, licenseStatus);
-      return -1;
-    }
-  }
+     // Initialize AutoLM object with entity, product, mode, password
+     // and Infura id needed to verify activation on-chain
+     lm->AutoLmInit(entityName, entityId, product, productId, 3,
+                    vendorPassword, nVendorPwdLength, NULL, infuraId);
+
+     // Loop to validate license activation (needed if we create an activation)
+     for (;;)
+     {
+       switch (licenseStatus = lm->AutoLmValidateLicense(LICENSE_FILE,
+                                 &exp_date, buyHashId, &resultingValue))
+       {
+         // If valid, display the activation expiration
+         case licenseValid:
+             Validated = true;
+             sprintf(BufValidate,
+                     "Activation for %s expires on %s", product,
+                     ctime(&exp_date));
+           break;
+
+         // If no license file exists, create a local license activation
+         case noLicenseFile:
+         {
+           int created = lm->AutoLmCreateLicense(LICENSE_FILE);
+           if (created >= 0)
+             continue; // Call Validate again after creating
+           else
+             break;
+         }
+
+         // If no license not valid on-chain/expired, launch Dapp to purchase
+         case blockchainExpiredLicense:
+
+           // launch browser to purchase from Immutable
+           launchPurchaseDialog(entityId, productId, buyHashId, purchaseUrl);
+           break;
+         default:
+           break;
+       }
+       break;
+     }
+
+     // If license is not valid then exit the application
+     if (licenseStatus != licenseValid)
+     {
+       puts("This application requires a valid activation on-chain.");
+       if (licenseStatus == blockchainExpiredLicense)
+       {
+         puts("\nYour browser (Chrome) was opened to the Immutable Ecosystem");
+         puts("license activation purchase page for this application, passing");
+         puts("your unique activation identifier. Please Purchase the activation");
+         puts("from the Ecosystem to unlock this application running on your PC.");
+         puts(purchaseUrl);
+       }
+       return -1;
+     }
   ...
 }
 ```

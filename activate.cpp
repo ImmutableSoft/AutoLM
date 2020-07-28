@@ -70,11 +70,11 @@ int OverrideMachineId(char* comp_id)
 int main(int argc, const char **argv)
 {
   AutoLm *lm = new AutoLm();
-  char vendorPassword[20 + 1];
-  int nVendorPwdLength;
+  char entityPassword[20 + 1];
+  int entityPwdLength;
 
-  const char* strVendorPassword = argv[6];
-  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
+  const char* strEntityPassword = argv[6];
+  size_t entityPasswordStrLength = strlen(strEntityPassword);
   int res;
 
   // Entity, EntityId, Application, AppId, Mode, Password, CompId, Filename
@@ -92,7 +92,7 @@ int main(int argc, const char **argv)
     puts("  <product name> is Immutable Ecosystem Product name");
     puts("  <product id> is Immutable Ecosystem Product Id");
     puts("  <mode> is authenticate mode, 2 is MD5, 3 is SHA1");
-    puts("  <password> password string, supports escape characters ie. 'Passw\\0rd'");
+    puts("  <password> string with escape characters ie. 'ThePassw\\0rd'");
     puts("  [comp id] Optional. Computer/Machine Id, or current OS/PC if missing");
     puts("  [file name] Optional. Default is ./license.elm");
 
@@ -104,15 +104,16 @@ int main(int argc, const char **argv)
     OverrideMachineId((char *)argv[7]);
 
   // Return error if password is to long
-  if (nVendorPasswordStrLength > 20)
+  if (entityPasswordStrLength > 20)
   {
-    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
+    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n",
+           strEntityPassword, entityPasswordStrLength);
     return -1;
   }
 
   // Otherwise convert escape chars in password \char to char hex value
   else
-    nVendorPwdLength = lm->AutoLmPwdStringToBytes(strVendorPassword, vendorPassword);
+    entityPwdLength = lm->AutoLmPwdStringToBytes(strEntityPassword, entityPassword);
 
   // Initialize the AutoLM class with the passed parameters
 
@@ -120,14 +121,14 @@ int main(int argc, const char **argv)
   if ((argc >= 8) && ((argv[7][0] == '0') && (argv[7][1] == 'x')))
   {
     res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-                         vendorPassword, nVendorPwdLength, OverrideMachineId, NULL);
+                         entityPassword, entityPwdLength, OverrideMachineId, NULL);
   }
 
   // Otherwise use the default Computer Id
   else
   {
     res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-                  vendorPassword, nVendorPwdLength, NULL, NULL);
+                         entityPassword, entityPwdLength, NULL, NULL);
   }
 
   // If initialization success, create the license file

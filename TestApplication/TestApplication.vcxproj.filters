@@ -27,6 +27,18 @@
     <ClInclude Include="TestApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\autolm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\md5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\sha1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TestApplication.cpp">

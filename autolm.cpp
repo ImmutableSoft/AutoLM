@@ -504,12 +504,12 @@ AutoLm::~AutoLm()
 #endif
 
 /***********************************************************************/
-/* AutoLmInit: Initialize AutoLM with vendor/product credentials       */
+/* AutoLmInit: Initialize AutoLM with entity/product credentials       */
 /*                                                                     */
 /*     Returns: 0 if success, otherwise an error occurred              */
 /*                                                                     */
 /***********************************************************************/
-int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
+int DECLARE(AutoLm) AutoLmInit(const char* entity, ui64 entityId,
                                const char* product, ui64 productId,
                                int mode, const char* password,
                                ui32 pwdLength, int (*computer_id)(char*),
@@ -518,7 +518,7 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
   ui8 compid_octet[36];
   int compidlen;
 
-  if ((vendor == NULL) || (product == NULL) ||
+  if ((entity == NULL) || (product == NULL) ||
       (password == NULL))
     return otherLicenseError;
 
@@ -527,9 +527,9 @@ int DECLARE(AutoLm) AutoLmInit(const char* vendor, ui64 vendorId,
     return otherLicenseError;
 #endif
 
-  strcpy(AutoLmOne.vendor, vendor);
-  AutoLmOne.vendorlen = strlen(AutoLmOne.vendor);
-  AutoLmOne.vendorid = vendorId;
+  strcpy(AutoLmOne.entity, entity);
+  AutoLmOne.entitylen = strlen(AutoLmOne.entity);
+  AutoLmOne.entityid = entityId;
  
   strcpy(AutoLmOne.product, product);
   AutoLmOne.productlen = strlen(AutoLmOne.product);
@@ -592,16 +592,16 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
 {
   FILE *pFILE;
   char tmp[170],tmpstr[170], tmpstr1[170];
-  char loc_hostVendorProductIds[170];
+  char loc_hostEntityProductIds[170];
   int nBuffersSize = 170; // vendorId/productId are 20 chars max length
   char loc_hash[44]; /* hash is 20 octets for SHA1 and 16 for MD5 */
                      /* as a string it could be up to 44 characters */
-  char loc_hostid[120], loc_vendor[20], loc_app[30];
-  char loc_vendorId[40], loc_productId[40];
+  char loc_hostid[120], loc_entity[20], loc_app[30];
+  char loc_entityId[40], loc_productId[40];
   ui8 gen_lMAC[20], hash_octet[20];
   int i, authlen, hashlen, rval, hostidlen;
-  ui64 loc_vendorid, loc_productid;
-  bool in_vendor = false, in_app = false, app_parsed = false;
+  ui64 loc_entityid, loc_productid;
+  bool in_entity = false, in_app = false, app_parsed = false;
 
   rval = otherLicenseError;
 
@@ -621,20 +621,20 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
       if ((tmp[0] == '[') && (strchr(tmp, ']') != NULL))
       {
         /*-------------------------------------------------------------*/
-        /* Read and check the vendor name with the configured vendor   */
+        /* Read and check the entity name with the configured entity   */
         /*-------------------------------------------------------------*/
-        in_vendor = false;
+        in_entity = false;
         strchr(tmp, ']')[0] = 0;
 
         if (strlen(tmp) <= 20)
-          strcpy(loc_vendor, &(tmp[1]));
+          strcpy(loc_entity, &(tmp[1]));
         else
           continue;
 
-        if (strcmp(loc_vendor, AutoLmOne.vendor) == 0)
-          in_vendor = true;
+        if (strcmp(loc_entity, AutoLmOne.entity) == 0)
+          in_entity = true;
       }
-      else if (in_vendor)
+      else if (in_entity)
       {
         /*-------------------------------------------------------------*/
         /* Read and check the application name with the requested      */
@@ -687,7 +687,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
         if (tmpstr1[strlen(tmpstr1) - 1] == BLOCK_CHAIN_CHAR)
         {
           // Remove the trailing colon (:)
-          strcpy(loc_hostVendorProductIds, tmpstr1);
+          strcpy(loc_hostEntityProductIds, tmpstr1);
           tmpstr1[strlen(tmpstr1) - 1] = 0;
           PRINTF("requires block chain Validation()\n");
 
@@ -705,15 +705,15 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           strcpy(tmp, &(strchr(tmpstr1, ':')[1]));
           strchr(tmpstr1, ':')[0] = 0; // remove product id
           if (strlen(tmpstr1) <= 40)
-            strcpy(loc_vendorId, tmpstr1);
+            strcpy(loc_entityId, tmpstr1);
           else
             continue;
 
           char* stopstring;
-          loc_vendorid = strtoull(loc_vendorId, &stopstring, 10);
-          if (loc_vendorid != AutoLmOne.vendorid)
+          loc_entityid = strtoull(loc_entityId, &stopstring, 10);
+          if (loc_entityid != AutoLmOne.entityid)
           {
-            rval = blockchainVendoridNoMatch;
+            rval = blockchainEntityIdNoMatch;
             continue;
           }
           if (strlen(tmp) <= 40)
@@ -829,8 +829,8 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           goto done;
         }
 
-        // Copy back the vendor/product ids before hashing
-        strcpy(loc_hostid, loc_hostVendorProductIds);
+        // Copy back the entity/product ids before hashing
+        strcpy(loc_hostid, loc_hostEntityProductIds);
 
         /*-------------------------------------------------------------*/
         /* Compute the expected hash for the license file              */
@@ -875,13 +875,13 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
     fclose(pFILE);
 
     // If a license found and valid, check Ethereum database
-    if (in_vendor && in_app && app_parsed && (rval == licenseValid))
+    if (in_entity && in_app && app_parsed && (rval == licenseValid))
     {
-      PRINTF("llEntityId = %llu, llProductId = %llu\n", loc_vendorid,
+      PRINTF("llEntityId = %llu, llProductId = %llu\n", loc_entityid,
              loc_productid);
 
       // Query the Ethereum database for the activation value
-      rval = AutoLmOne.blockchainValidate(loc_vendorid, loc_productid,
+      rval = AutoLmOne.blockchainValidate(loc_entityid, loc_productid,
                                           loc_hash, // hash is activation
                                           AutoLmOne.infuraProductId,
                                           exp_date, resultValue);
@@ -933,9 +933,9 @@ int DECLARE(AutoLm) AutoLmHashLicense(const char *appstr,
   theMsg[0] = 0;
 
   /*-------------------------------------------------------------------*/
-  /* Add the vendor name                                               */
+  /* Add the entity name                                               */
   /*-------------------------------------------------------------------*/
-  strcat(theMsg, AutoLmOne.vendor);
+  strcat(theMsg, AutoLmOne.entity);
 
   /*-------------------------------------------------------------------*/
   /* Add the application name                                          */
@@ -944,7 +944,7 @@ int DECLARE(AutoLm) AutoLmHashLicense(const char *appstr,
 
 
   /*-------------------------------------------------------------------*/
-  /* Add the computerId and for blockchain vendorId, productId         */
+  /* Add computerId to the license message                             */
   /*-------------------------------------------------------------------*/
   strcat(theMsg, computerid);
   len = (int)strlen(theMsg);
@@ -1028,7 +1028,7 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
   char hostidstr[136], tmpstr[86];
 
   // Check for configuration errors
-  if ((filename == NULL) || (AutoLmOne.vendorid <= 0) ||
+  if ((filename == NULL) || (AutoLmOne.entityid <= 0) ||
       (AutoLmOne.productid < 0) || (AutoLmOne.mode < 0))
     return -1;
 
@@ -1036,10 +1036,10 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
   if (hostidlen > 0)
   {
     /*-----------------------------------------------------------------*/
-    /* Add the vendor and the product id for immutable ecosystem       */
+    /* Add the entity and the product id for immutable ecosystem       */
     /*-----------------------------------------------------------------*/
     snprintf(hostidstr, 135, "%s:%llu:%llu:", AutoLmOne.computerId,
-             AutoLmOne.vendorid, AutoLmOne.productid);
+             AutoLmOne.entityid, AutoLmOne.productid);
 	}
   else
     return -2;
@@ -1074,7 +1074,7 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
         /*-------------------------------------------------------------*/
         /* Write the license to file                                   */
         /*-------------------------------------------------------------*/
-        sprintf(infoString, "[%s]\n", AutoLmOne.vendor);
+        sprintf(infoString, "[%s]\n", AutoLmOne.entity);
         fputs(infoString, pFILE);
         sprintf(infoString, "%s %s %s\n", AutoLmOne.product,
                 hostidstr, hashtext);
@@ -1103,58 +1103,57 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
 int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
                                            char *byteResult)
 {
-//  char vendorPassword[20 + 1];
-  int nVendorPwdLength = 10; // init vendor password length
+  int entityPwdLength = 10; // init entity password length
+  const char *entityPassword = password;
+  size_t entityPasswordLength = strlen(entityPassword);
 
-  const char* strVendorPassword = password;
-  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
-  if (nVendorPasswordStrLength > 20)
+  if (entityPasswordLength > 20)
   {
-    printf("vendorPassword '%s' length %zd, max length is 20\n",
-           strVendorPassword, nVendorPasswordStrLength);
+    PRINTF("entityPassword '%s' length %zd, max length is 20\n",
+           entityPassword, entityPasswordLength);
     return -1;
   }
 
   //convert escape chars in password \char to char hex value
   int j = 0;
   int nPwdLength = 0;
-  for (int i = 0; i < (int)nVendorPasswordStrLength; i++)
+  for (int i = 0; i < (int)entityPasswordLength; i++)
   {
-    if (strVendorPassword[i] == '\\')
+    if (entityPassword[i] == '\\')
     {
       i++;
-      if (isdigit(strVendorPassword[i]))
+      if (isdigit(entityPassword[i]))
       {
-        byteResult[j++] = char(strVendorPassword[i] - 0x30);// 0x30 - 0
+        byteResult[j++] = char(entityPassword[i] - 0x30);// 0x30 - 0
       }
-      else if (isxdigit(strVendorPassword[i]))
+      else if (isxdigit(entityPassword[i]))
       {
-        if (isupper(strVendorPassword[i]))
-          byteResult[j++] = char(strVendorPassword[i] - 0x41 + 10); // 0x65 - A
+        if (isupper(entityPassword[i]))
+          byteResult[j++] = char(entityPassword[i] - 0x41 + 10); // 0x65 - A
         else
-          byteResult[j++] = char(strVendorPassword[i] - 0x61 + 10); // 0x61 - a
+          byteResult[j++] = char(entityPassword[i] - 0x61 + 10); // 0x61 - a
       }
       else
       {
-        printf("vendorPassword char not valid decimal or hex number - '%c'\n",
-          strVendorPassword[i]);
+        printf("entityPassword char not valid decimal or hex number - '%c'\n",
+               entityPassword[i]);
         return -1;
       }
     }
     else
-      byteResult[j++] = strVendorPassword[i];
+      byteResult[j++] = entityPassword[i];
 
     nPwdLength++;
   }
 
-  nVendorPwdLength = nPwdLength;
+  entityPwdLength = nPwdLength;
 
 #if AUTOLM_DEBUG
-  PRINTF("vendorPassword - '%s', vendorPwdLength = %d\n", strVendorPassword,
-         nVendorPasswordStrLength);
-  PRINTF("vendorPassword - [");
+  PRINTF("entityPassword - '%s', entityPwdLength = %d\n", entityPassword,
+         entityPasswordLength);
+  PRINTF("entityPassword - [");
 
-  for (int i = 0; i < nVendorPwdLength; i++)
+  for (int i = 0; i < entityPwdLength; i++)
   {
     if (byteResult[i] > 15)
     {
@@ -1169,16 +1168,18 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
       PRINTF("\\%c,", byteResult[i] - 10 + 0x41);
     }
   }
-  PRINTF("], vendorPwdLength = %d\n", nVendorPwdLength);
-  if (nVendorPwdLength < 10)
-  {
-    printf("vendor password length = %d. Must be 10 to 20 characters\n",
-           nVendorPwdLength);
-    return -1;
-  }
+  PRINTF("], entityPwdLength = %d\n", entityPwdLength);
   #endif
 
-  return nVendorPwdLength;
+  // Ensure password is of minimum length
+  if (entityPwdLength < 10)
+  {
+    printf("entity password length = %d. Must be 10 to 20 characters\n",
+           entityPwdLength);
+    return -1;
+  }
+
+  return entityPwdLength;
 }
 
 /***********************************************************************/

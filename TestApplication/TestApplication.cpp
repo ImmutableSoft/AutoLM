@@ -1,20 +1,58 @@
-// TestApplication.cpp : Defines the entry point for the application.
-//
+/***********************************************************************/
+/*                                                                     */
+/*   Module:  TestApplication.cpp example of licensing an application  */
+/*   Version: 2020.0                                                   */
+/*   Purpose: Demonstrating AutoLM, the Automated License Manager      */
+/*            that utilizes the Immutable Ecosystem                    */
+/*                                                                     */
+/*---------------------------------------------------------------------*/
+/*                                                                     */
+/*                 Copyright © 2020 ImmutableSoft Inc.                 */
+/*                                                                     */
+/* Permission is hereby granted, free of charge, to any person         */
+/* obtaining a copy of this software and associated documentation      */
+/* files (the “Software”), to deal in the Software without             */
+/* restriction, including without limitation the rights to use, copy,  */
+/* modify, merge, publish, distribute, sublicense, and/or sell copies  */
+/* of the Software, and to permit persons to whom the Software is      */
+/* furnished to do so, subject to the following conditions:            */
+/*                                                                     */
+/* The above copyright notice and this permission notice shall be      */
+/* included in all copies or substantial portions of the Software.     */
+/*                                                                     */
+/* THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,     */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND               */
+/* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS */
+/* BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN  */
+/* ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN   */
+/* CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE    */
+/* SOFTWARE.                                                           */
+/*                                                                     */
+/***********************************************************************/
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include "autolm.h"
 #include "windows.h"
+
+// Configuration
+#define INFURA_PROJECT_ID "6233914717a744d19a2931dfbdd3dddc" // Change this!
+#define LICENSE_FILE      "./license.elm"
+
+static char BufValidate[100];
+static bool Validated = false;
+
 #ifndef _UNIX
 #include "framework.h"
 #include "TestApplication.h"
 
-#define MAX_LOADSTRING 100
+#define MAX_LOADSTRING    100
 
 // Global Variables:
-HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+HINSTANCE hInst;                            // current instance
+WCHAR szTitle[MAX_LOADSTRING];              // The title bar text
+WCHAR szWindowClass[MAX_LOADSTRING];        // main window class name
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -40,7 +78,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_TESTAPPLICATION, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_TESTAPPLICATION, szWindowClass,
+                MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // Perform application initialization:
@@ -49,7 +88,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTAPPLICATION));
+    HACCEL hAccelTable = LoadAccelerators(hInstance,
+                           MAKEINTRESOURCE(IDC_TESTAPPLICATION));
 
     MSG msg;
 
@@ -84,48 +124,74 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TESTAPPLICATION));
+    wcex.hIcon          = LoadIcon(hInstance,
+                            MAKEINTRESOURCE(IDI_TESTAPPLICATION));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_TESTAPPLICATION);
     wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.hIconSm        = LoadIcon(wcex.hInstance,
+                            MAKEINTRESOURCE(IDI_SMALL));
 
     return RegisterClassExW(&wcex);
 }
 #endif /* _UNIX */
 
-int launchBuyDialog(char* vendorIdStr, char* productIdStr, char* buyUniqueId)
+/***********************************************************************/
+/* launchPurchaseDialog: Launch Dapp to activation purchase page       */
+/*                                                                     */
+/*      Inputs: entityId = entity ID static in Immutable Ecosystem     */
+/*              productId = product ID static in Immutable Ecosystem   */
+/*              activationId = local activation identifier to activate */
+/*                             in hex string format                    */
+/*      Output: purchaseUrl = the resulting URL to open purchase page  */
+/*                                                                     */
+/*     Returns: result of execution (launch), zero if success          */
+/*                                                                     */
+/***********************************************************************/
+int launchPurchaseDialog(ui64 entityId, ui64 productId,
+                         const char* activationId, char *purchaseUrl)
 {
   char bufLink[200];
   char bufLaunch[250];
-  sprintf(bufLink, "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=1",
-    vendorIdStr, productIdStr, buyUniqueId);
-  printf("bufLink - '%s'\n", bufLink);
+  char entityIdStr[21];
+  char productIdStr[21];
+
+  // Convert the entity and product IDs to string equivalent
+  sprintf(entityIdStr, "%llu", entityId);
+  sprintf(productIdStr, "%llu", productId);
+
+  // Create the purchaseUrl result string if not NULL
+  if (purchaseUrl)
+  {
+    sprintf(purchaseUrl,
+      "https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=0",
+      entityIdStr, productIdStr, activationId);
+  }
+
+  // Create the URL with -app parameter for passing to the Chrome browser
+  sprintf(bufLink,
+    "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=0",
+    entityIdStr, productIdStr, activationId);
+  PRINTF("bufLink - '%s'\n", bufLink);
 
   sprintf(bufLaunch, "start chrome.exe \"%s\"", bufLink);
-  printf("bufLaunch - '%s'\n", bufLaunch);
+  PRINTF("bufLaunch - '%s'\n", bufLaunch);
   int n = 0;
 #ifndef _WINDOWS
   sprintf(bufLaunch, "/usr/bin/google-chrome \"%s\"", bufLink);
-  printf("lanching '%s'\n", bufLaunch);
+  PRINTF("lanching '%s'\n", bufLaunch);
   n = system(bufLaunch);
-  printf("n = %d\n", n);
+  PRINTF("n = %d\n", n);
 #else
-  printf("lanching '%s'\n", bufLaunch);
+  PRINTF("lanching '%s'\n", bufLaunch);
   n = system(bufLaunch);
 #endif
-  printf("n = %d\n", n);
+  PRINTF("n = %d\n", n);
 
+  // Return system() call result (zero on success)
   return n;
 }
-
-#define INFURA_PROJECT_ID "6233914717a744d19a2931dfbdd3dddc"
-#define LICENSE_FILE      "./license.elm"
-
-// Global variables
-static char s_bufValidate[100];
-static bool s_bValidated = false;
 
 #ifndef _UNIX
 
@@ -158,57 +224,69 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 int main()
 {
 #endif /* ifndef _UNIX */
+
+   // Allocate the Automatic License Manager object
    AutoLm *lm = new AutoLm();
    if (lm)
    {
-     // Reconfigure entity and product below to match Ecosystem
-     const char* entityName = "CreatorAuto1"; //From Immutable Ecosystem
-     ui64 entityId = 3; // From Immutable Ecosystem, static per application
-     char entityIdStr[21];
-
-     sprintf(entityIdStr, "%llu", entityId);
-     const char* product = "GameProduct";
-     ui64 productId = 1; // From Immutable Ecosystem, static per application
-     char productIdStr[21];
-     sprintf(productIdStr, "%llu", productId);
-
-     char vendorPassword[20 + 1];
-     unsigned int nVendorPwdLength;
-     nVendorPwdLength = lm->AutoLmPwdStringToBytes("MyPassw\\0rd",
-       vendorPassword);
-
-     char buyHashId[44] = "";
-     const char* infuraId = INFURA_PROJECT_ID; // From https://infura.io
      time_t exp_date = 0;
      ui64 resultingValue;
      int licenseStatus;
+     char vendorPassword[20 + 1];
+     char buyHashId[44] = "";
+     char purchaseUrl[244] = "";
+     unsigned int nVendorPwdLength;
 
+     // Reconfigure entity and product below to match Ecosystem
+     const char* entityName = "CreatorAuto1"; //From Immutable Ecosystem
+     const char* product = "GameProduct";
+     ui64 entityId = 3; // From Immutable Ecosystem, static per application
+     ui64 productId = 1; // From Immutable Ecosystem, static per application
+
+     // Populate the Infura ID with your specific id
+     const char* infuraId = INFURA_PROJECT_ID; // From https://infura.io
+
+     // Populate the password by converting the string to bytes
+     nVendorPwdLength = lm->AutoLmPwdStringToBytes("ThePassw\\0rd",
+                                                   vendorPassword);
+
+     // Initialize AutoLM object with entity, product, mode, password
+     // and Infura id needed to verify activation on-chain
      lm->AutoLmInit(entityName, entityId, product, productId, 3,
-       vendorPassword, nVendorPwdLength, NULL, infuraId);
+                    vendorPassword, nVendorPwdLength, NULL, infuraId);
+
+     // Loop to validate license activation (needed if we create an activation)
      for (;;)
      {
        switch (licenseStatus = lm->AutoLmValidateLicense(LICENSE_FILE,
-         &exp_date, buyHashId, &resultingValue))
+                                 &exp_date, buyHashId, &resultingValue))
        {
-       case licenseValid:
-           s_bValidated = true;
-           sprintf(s_bufValidate, "Activation for GameProduct expires on %s", ctime(&exp_date));
-           printf("%s\n", s_bufValidate);
-         break;
-       case noLicenseFile:
-       {
-         int created = lm->AutoLmCreateLicense(LICENSE_FILE);
-         if (created >= 0)
-           continue; // Call Validate again after creating
-         else
+         // If valid, display the activation expiration
+         case licenseValid:
+             Validated = true;
+             sprintf(BufValidate,
+                     "Activation for %s expires on %s", product,
+                     ctime(&exp_date));
            break;
-       }
-       case blockchainExpiredLicense:
-         // launch browser to purchase from Immutable
-         launchBuyDialog(entityIdStr, productIdStr, buyHashId);
-         break;
-       default:
-         break;
+
+         // If no license file exists, create a local license activation
+         case noLicenseFile:
+         {
+           int created = lm->AutoLmCreateLicense(LICENSE_FILE);
+           if (created >= 0)
+             continue; // Call Validate again after creating
+           else
+             break;
+         }
+
+         // If no license not valid on-chain/expired, launch Dapp to purchase
+         case blockchainExpiredLicense:
+
+           // launch browser to purchase from Immutable
+           launchPurchaseDialog(entityId, productId, buyHashId, purchaseUrl);
+           break;
+         default:
+           break;
        }
        break;
      }
@@ -219,13 +297,18 @@ int main()
 #ifndef _UNIX
        // Not activated, close the application
        DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+       puts(purchaseUrl);
        return FALSE;
 #else /* ifndef _UNIX */
-       puts("This application requires an activation validated on the Immutable Ecosystem.");
-       puts("\nYour browser (Chrome) was opened to the Immutable Ecosystem");
-       puts("license activation purchase page for this application, passing");
-       puts("your unique activation identifier. Please Purchase the activation");
-       puts("from the Ecosystem to unlock this application running on your PC.");
+       puts("This application requires a valid activation on-chain.");
+       if (licenseStatus == blockchainExpiredLicense)
+       {
+         puts("\nYour browser (Chrome) was opened to the Immutable Ecosystem");
+         puts("license activation purchase page for this application, passing");
+         puts("your unique activation identifier. Please Purchase the activation");
+         puts("from the Ecosystem to unlock this application running on your PC.");
+         puts(purchaseUrl);
+       }
        return -1;
 #endif /* ifndef _UNIX */
      }
@@ -235,7 +318,8 @@ int main()
 #ifndef _UNIX
          DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 #else /* ifndef _UNIX */
-       puts("TestApplication for this PC was validated on the Immutable Ecosystem.");
+       puts("This application was purchased on the Immutable Ecosystem.");
+       puts(BufValidate);
 #endif /* ifndef _UNIX */
      }
    }
@@ -309,14 +393,15 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG:
-        if (s_bValidated == true)
+        if (Validated == true)
         {
             //OutputDebugString(L"************");
             wchar_t wBuf[100];
             size_t n;
-            mbstowcs_s(&n, wBuf, s_bufValidate, 100);
+            mbstowcs_s(&n, wBuf, BufValidate, 100);
             SetDlgItemText(hDlg, IDC_STATIC_MSG_VALIDATED, wBuf);
-            SetDlgItemText(hDlg, IDC_STATIC_MSG_VALIDATED_2, L"This application activation was validated on the Immutable Ecosystem");
+            SetDlgItemText(hDlg, IDC_STATIC_MSG_VALIDATED_2,
+              L"TestApplication for this PC was validated on the Immutable Ecosystem.");
         }
         return (INT_PTR)TRUE;
 

@@ -82,7 +82,7 @@ enum AutoLmResponse
 {
   licenseValid = 0,
   noLicenseFile,
-  noVendorMatch,
+  noEntityMatch,
   noApplicationMatch,
   newerRevision,
   expiredLicense,
@@ -90,7 +90,7 @@ enum AutoLmResponse
   authFieldInvalid,
   authFieldWrongLength,
   compidInvalid,
-  blockchainVendoridNoMatch, /* 10 */
+  blockchainEndityIdNoMatch, /* 10 */
   blockchainProductidNoMatch,
   blockchainExpiredLicense,
   blockchainAuthenticationFailed,
@@ -103,9 +103,9 @@ enum AutoLmResponse
 */
 typedef struct AutoLmConfig
 {
-  char vendor[128];
-  size_t vendorlen;
-  ui64 vendorid;
+  char entity[128];
+  size_t entitylen;
+  ui64 entityid;
   char product[128];
   size_t productlen;
   ui64 productid;
@@ -135,7 +135,7 @@ public:
   AutoLm();
   ~AutoLm();
 
-  int AutoLmInit(const char* vendor, ui64 vendorId, const char* product,
+  int AutoLmInit(const char* entity, ui64 entityId, const char* product,
                  ui64 productId, int mode, const char* password,
                  ui32 pwdLength, int (*computer_id)(char*),
                  const char* infuraId);
@@ -166,7 +166,7 @@ private:
      ui32 locstrlen,  /* IN  - length of unique ID */
      ui8 *key);     /* OUT - pointer to resulting 20-byte buffer */
   int AutoLmCalculateHash(int type, ui8 *wholeMsg,
-                           int wholeMsglen, ui8 *result);
+                          int wholeMsglen, ui8 *result);
 
   AutoLmConfig AutoLmOne;
   CSha Csha_inst;

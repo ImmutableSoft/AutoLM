@@ -25,6 +25,12 @@
     <ClCompile Include="base\sha1.cpp" />
     <ClCompile Include="CompId.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="autolm.h" />
+    <ClInclude Include="base\common.h" />
+    <ClInclude Include="base\md5.h" />
+    <ClInclude Include="base\sha1.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
