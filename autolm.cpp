@@ -598,6 +598,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
                      /* as a string it could be up to 44 characters */
   char loc_hostid[120], loc_entity[20], loc_app[30];
   char loc_entityId[40], loc_productId[40];
+  char* stopstring;
   ui8 gen_lMAC[20], hash_octet[20];
   int i, authlen, hashlen, rval, hostidlen;
   ui64 loc_entityid, loc_productid;
@@ -691,25 +692,35 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           tmpstr1[strlen(tmpstr1) - 1] = 0;
           PRINTF("requires block chain Validation()\n");
 
+          /*-----------------------------------------------------------*/
+          /* Copy entity/product id to tmpstr1, and null terminate     */
+          /* computer/host id in tmp.                                  */
+          /*-----------------------------------------------------------*/
           strcpy(tmpstr1, &(strchr(tmpstr1, ':')[1]));
-          strchr(tmp, ':')[0] = 0; // remove entity id
+          strchr(tmp, ':')[0] = 0; // Null terminate at the colon
 
           /*-----------------------------------------------------------*/
-          /* If the id length valid: app 2 for 0x and 32 for 16 hex.   */
+          /* Copy computer id if the id length is valid.               */
+          /*   2 for 0x and 32 for 16 hex.                             */
           /*-----------------------------------------------------------*/
           if (strlen(tmp) <= 34)
               strcpy(loc_hostid, tmp);
           else
             continue;
 
+          /*-----------------------------------------------------------*/
+          /* Copy the entity Id from between the colons.               */
+          /*-----------------------------------------------------------*/
           strcpy(tmp, &(strchr(tmpstr1, ':')[1]));
-          strchr(tmpstr1, ':')[0] = 0; // remove product id
+          strchr(tmpstr1, ':')[0] = 0; // Null terminate at the colon
           if (strlen(tmpstr1) <= 40)
             strcpy(loc_entityId, tmpstr1);
           else
             continue;
 
-          char* stopstring;
+          /*-----------------------------------------------------------*/
+          /* Convert entity Id to integer and check for a match.       */
+          /*-----------------------------------------------------------*/
           loc_entityid = strtoull(loc_entityId, &stopstring, 10);
           if (loc_entityid != AutoLmOne.entityid)
           {
@@ -721,6 +732,9 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
           else
             continue;
 
+          /*-----------------------------------------------------------*/
+          /* Convert product Id to integer and check for a match.      */
+          /*-----------------------------------------------------------*/
           loc_productid = strtoull(loc_productId, &stopstring, 10);
           if (loc_productid != AutoLmOne.productid)
           {
@@ -743,6 +757,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
         {
           char machineId[64];
 
+          // Retrieve the globally unique computer or machine Id
           if (AutoLmOne.getComputerId(machineId) <= 0)
           {
             rval = compidInvalid;

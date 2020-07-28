@@ -90,7 +90,7 @@ enum AutoLmResponse
   authFieldInvalid,
   authFieldWrongLength,
   compidInvalid,
-  blockchainEndityIdNoMatch, /* 10 */
+  blockchainEntityIdNoMatch, /* 10 */
   blockchainProductidNoMatch,
   blockchainExpiredLicense,
   blockchainAuthenticationFailed,
