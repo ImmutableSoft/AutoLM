@@ -1,4 +1,4 @@
-![image entity](./images/Immutable_BlueOnWhite_Logo.png)
+<img src="./images/Immutable_BlueOnWhite_Logo.png" align="right" width="100" height="100"/>
 
 # <img src="./images/AutoLm.png" alt="autolm" width="100" height="100"/> AutoLM Introduction
 
@@ -404,4 +404,4 @@ and update their activation identifier to the new value.
 Applications with many features may wish to consider a bulk
 migration feature.
 
-![image entity](./images/Immutable_BlueOnWhite_Logo.png)
+<img src="./images/Immutable_BlueOnWhite_Logo.png" align="right" width="100" height="100"/>
