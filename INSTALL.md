@@ -1,5 +1,7 @@
 
-# Building AutoLM and dependencies
+<img src="./images/Immutable_BlueOnWhite_Logo.png" align="right" width="100" height="50"/>
+
+# <img src="./images/AutoLm.png" alt="autolm" width="100" height="100"/> Building AutoLM and dependencies
 
 Automatic License Manager build and installation instructions.
 
@@ -168,3 +170,5 @@ make -f Makefile.macos
 # Using AutoLM
 
 See the [README.md](./README.md) file for using AutoLM.
+
+<img src="./images/Immutable_BlueOnWhite_Logo.png" align="right" width="100" height="50"/>

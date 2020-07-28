@@ -7,14 +7,14 @@ and activation! We believe software creators should be
 in control of and directly compensated for their creations.
 We believe software users want to be in control of their
 purchased product activations as well as know their payment
-goes directly to the creator of the products they purchase.
+goes entirely to the creator of the products they purchase.
 [ImmutableSoft Inc.](https://immutablesoft.org/) furthers
 their goal of a future where software sales and distribution
 are open and decentralized with the introduction of the
 Automated License Manager, or AutoLM. Coupled with a
 decentralized and publicly audit-able resale ecosystem,
 digital product activations are transformed into digital
-assets of increased value, while increasing overall
+assets of more inherent value, while increasing overall
 afford-ability and desirability.
 
 Together with a software creator presence on the
@@ -52,16 +52,17 @@ used to identify if the installed software is 'active' and was
 purchased on the Immutable Ecosystem.
 
 AutoLM is designed to be integrated in one of two ways; standalone
-or server assisted. Standalone used the installed software
-application to create an initial local license activation file.
-It is the simplest to deploy and is the basis for this
+or server assisted. Standalone has the installed software
+application create the initial local license activation file.
+It is the simplest to deploy and is the basis for the
 Quick Use Guide next. Server assisted moves the local license
-file creation process to a secure server the creator controls
-(JSON/REST interface, etc.). This gives additional security as
-well as control to the license distribution process and can be
-tied into the end user registration requirements of the
-software creator. All the while still maintaining automation
-of the process.
+file creation process to a secure server the creator controls,
+through any server interface (JSON/REST interface, etc.). This
+gives additional security as well as adding creator control to
+the local license file distribution process. This server interface
+can be tied into an end user registration requirement of the
+software creator, while still maintaining automation of the
+process.
 
 # Quick Use Guide
 
