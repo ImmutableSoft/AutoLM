@@ -506,6 +506,16 @@ AutoLm::~AutoLm()
 /***********************************************************************/
 /* AutoLmInit: Initialize AutoLM with entity/product credentials       */
 /*                                                                     */
+/*      Inputs: entity = full entity name (may change)                 */
+/*              entityId =  the Immutable Entity Id                    */
+/*              product =  full product name (may change)              */
+/*              productId = the Immutable Entity specific Product Id   */
+/*              mode = cryptographic algorithm to use for hash         */
+/*              password =  password seeded into cryptographic hash    */
+/*              pwdLength =  password length in bytes                  */
+/*              computer_id =  optional function to generate comp id   */
+/*              infuraId =  the Infura product Id assigned the creator */
+/*                                                                     */
 /*     Returns: 0 if success, otherwise an error occurred              */
 /*                                                                     */
 /***********************************************************************/
@@ -579,10 +589,10 @@ int DECLARE(AutoLm) AutoLmInit(const char* entity, ui64 entityId,
 /***********************************************************************/
 /* AutoLmValidateLicense: Determine validity of a license file         */
 /*                                                                     */
-/*      Inputs: filename = full filename of license file (may change)  */
-/*              exp_date = OUT the resulting expiration day/time       */
-/*              buyHashId = OUT resulting activation hash to purchase  */
-/*              buyHashId = OUT resulting value of the activation      */
+/*       Input: filename = full filename of license file (may change)  */
+/*     Outputs: exp_date = the resulting expiration day/time           */
+/*              buyHashId = resulting activation hash to purchase      */
+/*              resultValue = resulting value of the activation        */
 /*                                                                     */
 /*     Returns: the immutable value of license, otherwise zero (0)     */
 /*                                                                     */

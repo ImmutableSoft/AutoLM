@@ -2,13 +2,14 @@
 
 # <img src="./images/AutoLm.png" alt="autolm" width="100" height="100"/> AutoLM Introduction
 
-Welcome to the future of automated digital product sales
-and activation! We believe software creators should be
-in control of and directly compensated for their creations.
-We believe software users want to be in control of their
-purchased product activations as well as know their payment
-goes entirely to the creator of the products they purchase.
-[ImmutableSoft Inc.](https://immutablesoft.org/) furthers
+## Welcoming the future of digital activation assets!
+
+Software creators should be in control of sales
+details and be supremely compensated for their creations.
+End users of software should be in control of their
+purchased product activations and appreciate their
+payment goes directly to the creator of the products they
+purchase. [ImmutableSoft Inc.](https://immutablesoft.org/) furthers
 their goal of a future where software sales and distribution
 are open and decentralized with the introduction of the
 Automated License Manager, or AutoLM. Coupled with a
@@ -19,13 +20,13 @@ afford-ability and desirability.
 
 Together with a software creator presence on the
 [Immutable Ecosystem](https://ecosystem.immutablesoft.org),
-the AutoLM empowers a software creators' application with
+AutoLM empowers a software creators' application with
 sales distribution and automation, creating a valuable digital
-activation asset for each end user who purchases. Leveraging the
-monetizable, decentralized and immutable Ethereum database,
-AutoLM is able to automate the sales and/or activation processes
-within a creator controlled license activation and
-distribution ecosystem (ie. the Immutable Ecosystem).
+activation asset in exchange for crypto-currency directly from
+an end user. Leveraging the monetizable, decentralized and
+immutable Ethereum database, AutoLM and Immutable are able to
+automate sales and/or activation processes with a creator
+controlled license management configuration.
 
 # AutoLM Overview
 
@@ -36,20 +37,21 @@ be easy to use while following security best practices.
 
 AutoLM is built (see [INSTALL.md](./INSTALL.md)) as a
 C++ library to be linked together with the software or digital
-creation to be licensed/sold. For cloud/server and/or scripting
-language support there is optionally a set of command line
-tools available for use.
+creation to be licensed/sold. For server side or other
+programming language support, there is optionally a set of
+command line tools available for use.
 
-When built/linked/integrated together with the digital
-product that is to be licensed, AutoLM will enforce that a
-purchased product license activation is in fact valid on the 
-blockchain. The security of AutoLM works by utilizing a
+When integrated together with the digital
+product that is to be licensed, AutoLM will query the immutable
+Ethereum database and verify that a product license activation
+is in fact valid. The security of AutoLM works by utilizing a
 globally unique, read only PC/OS identifier and cryptographically
 tying it together with the unique entity and product information,
 including a secret password from the software creator. This
-process yields a unique activation identifier that is then 
-used to identify if the installed software is 'active' and was
-purchased on the Immutable Ecosystem.
+one way cryptographic algorithm yields a unique activation identifier
+that is then used to identify if the installed software is 'valid'
+as a current digital activation asset, stored on the immutable
+Ethereum database.
 
 AutoLM is designed to be integrated in one of two ways; standalone
 or server assisted. Standalone has the installed software
@@ -60,9 +62,9 @@ file creation process to a secure server the creator controls,
 through any server interface (JSON/REST interface, etc.). This
 gives additional security as well as adding creator control to
 the local license file distribution process. This server interface
-can be tied into an end user registration requirement of the
-software creator, while still maintaining automation of the
-process.
+can be tied into an end user registration requirement on the
+software creators website, while still maintaining automation of
+the process.
 
 # Quick Use Guide
 
@@ -76,39 +78,86 @@ Ropsten testnet (ie. leave code unchanged). With the entity and
 product reference from Immutable, call AutoLmInit() with a private
 mode and password to initialize the library.
 
-Once initialize the AutoLm object can be used to validate
+```
+/***********************************************************************/
+/* AutoLmInit: Initialize AutoLM with entity/product credentials       */
+/*                                                                     */
+/*      Inputs: entity = full entity name (may change)                 */
+/*              entityId =  the Immutable Entity Id                    */
+/*              product =  full product name (may change)              */
+/*              productId = the Immutable Entity specific Product Id   */
+/*              mode = cryptographic algorithm to use for hash         */
+/*              password =  password seeded into cryptographic hash    */
+/*              pwdLength =  password length in bytes                  */
+/*              computer_id =  optional function to generate comp id   */
+/*              infuraId =  the Infura product Id assigned the creator */
+/*                                                                     */
+/*     Returns: 0 if success, otherwise an error occurred              */
+/*                                                                     */
+/***********************************************************************/
+```
+
+Once initialized, the AutoLm object can be used to validate
 a license file or create a local license activation file.
-For a standalone situation usually AutoLmValidateLicense() is
+For a standalone situation, AutoLmValidateLicense() can be
 called to start and if it returns a noLicenseFound error,
-then the application creates a local activation with
+then the application may create a local activation with
 AutoLmCreateLicense() before calling AutoLmValidateLicense()
-again. On the second call to AutoLmValidateLicense() the
+again.
+
+```
+/***********************************************************************/
+/* AutoLmCreateLicense: Create blockchain activation license file      */
+/*                                                                     */
+/*       Input: filename to write the blockchain license               */
+/*                                                                     */
+/*     Returns: 0 if success, otherwise error code                     */
+/*                                                                     */
+/***********************************************************************/
+```
+
+On the second call to AutoLmValidateLicense() the
 Ethereum database will be checked and if a new install the
 blockchainExpiredLicense error will be returned, indicating
-that this activation is not purchased/valid.
+that this activation is not purchased or has expired.
+
+```
+/***********************************************************************/
+/* AutoLmValidateLicense: Determine validity of a license file         */
+/*                                                                     */
+/*       Input: filename = full filename of license file (may change)  */
+/*     Outputs: exp_date = the resulting expiration day/time           */
+/*              buyHashId = resulting activation hash to purchase      */
+/*              resultValue = resulting value of the activation        */
+/*                                                                     */
+/*     Returns: the immutable value of license, otherwise zero (0)     */
+/*                                                                     */
+/***********************************************************************/
+```
 
 At this point the application can choose to handle the situation
-however it pleases. At a minimum the application should display a
-dialog box displaying the activation identifier and a link to the
-Immutable Ecosystem. A better option is to provide an embedded
+however it pleases. At a minimum the application should display
+the activation identifier and a link to the Immutable Ecosystem.
+For a 'one-click' purchase experience provide an embedded
 link into the Immutable Ecosystem that will open the purchase
 activation page for that product with the end users activation
-identifier auto populated for a 'one-click' purchase experience.
+identifier auto populated .
 
 To integrate AutoLM into other payment options besides Immutable
 there are two options, upgrade to EasyLM for a full license
 management suite (contact ImmutableSoft for more information) or
 have your sales process create activations within the Immutable
-Ecosystem on behalf of your paying customers.
+Ecosystem on behalf of your customers when they purchase.
 
 Below is the standalone example to launch the Immutable Ecosystem
 with a link to an auto populated page for a 'one-click' customer
 purchase experience. The parameters include the entity and
 product id's as well as the end users activation identifier -
-from the installed software local license file. The purchase page
-URL into the Immutable Dapp is returned in purchaseUrl, which
-may be useful (by the user and/or application) if the launch of
-the Chrome browser to open the URL fails.
+from the installed local license file. The Chrome browser is
+launched opening the product purchase page and the purchase page
+URL is returned in purchaseUrl, which may be useful (by the user
+and/or application) if the launch of the Chrome browser to open
+the URL fails.
 
 ```
 /***********************************************************************/
@@ -167,12 +216,14 @@ int launchPurchaseDialog(ui64 entityId, ui64 productId,
   return n;
 }
 ```
+
 To complete the standalone integration of AutoLM, below is the code
 from the TestApplicaiton example included in Git repository. Note that
 the AutoLmValidateLicense() function returns the result as well as the
-expiration of the activation identifier as store on the block chain. It
-also populates the activation identifier needed to purchase from Immutable
-if the error blockchainExpiredLicense si returned.
+expiration of the activation identifier as stored on the block chain. It
+also returns the activation identifier needed to purchase or renew from
+Immutable if the error blockchainExpiredLicense is returned. It is possible
+to detect a renewal by checking if the returned expiration date is not zero.
 
 ```
 int main()
@@ -266,11 +317,11 @@ int main()
 
 Be sure to link your application with AutoLm (-lautolm) as well
 as any dependencies (curl, openssl, etc.). See the TestApplication
-for an example of the these for your build environment. More
-details on AutoLM is described below when discussing the command line
-tools. In general, the Activate command uses AutoLmInit() and
-AutoLmCreateLicense() within the AutoLm library, while the Validate
-command uses AutoLmInit() and AutoLmValidateLicense().
+for an example for your build environment. More details on AutoLM is
+described below when discussing the command line tools. In general,
+the Activate command uses AutoLmInit() and AutoLmCreateLicense() within
+the AutoLm library, while the Validate command uses AutoLmInit() and
+AutoLmValidateLicense().
 
 # Command Tools for Scripting Languages
 
@@ -290,18 +341,19 @@ activation check.
 To aid testing, debugging and integration with scripting
 languages (Python, Perl, Tcl, etc.), the following command
 line tools are created when AutoLM is built; 'compid', 'activate'
-and 'validate'. The 'compid' is used by an application for
-troubleshooting or when a server call is required to 'activate'
-as the computer id must be passed from the PC executing the
+and 'validate'. The 'compid' outputs the computer id and
+is used by an application for troubleshooting or during
+server assist when a server call is required to 'activate'
+and the computer id must be passed from the PC executing the
 software to the server creating the license file.
 
 The 'activate' command creates a local license (file) using
 the detected OS/PC computer id and the application details
-(names, ids, secret). The 'validate' call requires a previously
+(names, ids, mode, secret). The 'validate' call requires a previously
 created local license (file) and uses libcurl to validate the
-license on the Ethereum network. Validate returns a string
-representing the license activation value. Any number greater
-than zero is active, any number greater than one (1)
+license both locally and on the Ethereum network. Validate returns
+a string representing the license activation value. Any number
+greater than zero is active, any number greater than one (1)
 is application specific (ie. an application feature or item).
 
 ## CompId - Globally Unique and Immutable Identifier
@@ -324,22 +376,23 @@ or chaining together user or additional system hardware information
 with the default to create a more specific activation identifier.
 It is perfectly acceptable that different applications create different
 identifiers, but by default they will be identical as the requirement
-is that the ID be unique per PC/OS, not application. After compilation
-the computer id for the OS/PC can be retrieved with the CompId binary.
+is that the ID be unique per PC/OS, not application. The CompId
+command line tool takes no parameters and outputs the PC's unique
+global identifier.
 
 ```
 $ ./compid
 0x313fc746359696cb41a3a4adb663c6fb
 ```
 
-## Activate - Secure Unique Local Activation Install
+## Activate - Local Activation Install
 
 The second action of the library is creating local license
 activations for a particular user/system and product.
 This action requires a secret password and selected algorithm
 from the software creator. The simplest approach is to compile
 these details (password, mode) into the application. For
-additional security this second library can be hosted
+additional security the activation step can be hosted
 through a REST/JSON interface on the software creators
 website. This interface returns a created license in exchange
 for the computer id (and possibly other information)
@@ -348,9 +401,9 @@ at runtime.
 A local license activation is created locally, derived from the
 application secret, product and computer id. However, this local
 activation still requires registration on the global blockchain
-before in can be considered globally active. This blockchain
-activation step can thus require payment to the software creator
-through the transfer of crypto-currency (ETH).
+before in can be considered valid. This blockchain activation
+step can require payment to the software creator through the
+transfer of crypto-currency (ETH), automating the sales process.
 
 An example using the 'activate' command line tool to create a
 license activation file is below.
@@ -362,23 +415,28 @@ license activation file is below.
 ## Validate - Secure Blockchain Validation of Local Activation
 
 The third action of the library validates a local activation
-license (ensures computer id and hash match) and then
-securely queries (HTTPS) the Ethereum network and verifies
-the activation value. Only an activation value greater
-than zero is considered valid and any value besides one
-is considered a product feature. <b>The value one is reserved
-for digital product activation purposes.</b> Different application
-features can be available for purchase from the Immutable
-Ecosystem and are distinguished by their Activation
-Value. At no time after purchase can this Value be changed.
+license by ensuring the computer id matches the executing PC,
+and the product and license hash matches when computed with the
+secret password. If a local license file is copied to a different
+PC then the computer id will not match and the license is considered
+invalid. Validate, after ensuring the validity of the
+local license file using the current PC computer id and secret password,
+then securely queries (HTTPS) the Ethereum database and queries the
+activation value.
+
+Only an activation value greater than zero is considered valid and
+any value besides one is considered a product feature. <b>The value
+one is reserved for digital product activation purposes.</b> Different
+application features can be available for purchase from the Immutable
+Ecosystem and are distinguished by their Activation Value. At no time
+after purchase can this Value be changed.
 
 An example using the 'validate' command line tool to verify a
 license activation file with the Ethereum database is below. Note
 that the Infura Product Id (d3dddc6...1) is not a valid Infura Id.
-Please register you or your organization with
-[Infura](https://infura.io) to receive your own unique product
-identifier that should be used within your application for product
-validations.
+Please register you or your organization with [Infura](https://infura.io) to
+receive your own unique product identifier that should be used within your
+application for product validations.
 
 ```
 ./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
@@ -392,10 +450,10 @@ Move) from the Immutable Ecosystem is required.
 
 # AutoLM Application Integration Notes
 
-If found to not be valid on the Ecosystem, the application
-should consider the installation unlicensed and report the
-product identifier to the user and/or redirect the user
-to a browser/tab into the Immutable Ecosystem to purchase
+If an activation is found to not be valid on the Ecosystem, the
+application should consider the installation unlicensed and
+report the product identifier to the user and/or redirect the
+user to a browser/tab into the Immutable Ecosystem to purchase
 the activation (see launchBuyDialog() above). Once the user
 purchases a new activation through the Immutable Ecosystem
 the check will return valid and the application logic should
@@ -404,5 +462,11 @@ activation they can navigate to the Immutable Activations page
 and update their activation identifier to the new value.
 Applications with many features may wish to consider a bulk
 migration feature.
+
+Note that an activation has an expiration date stored on the
+blockchain and may be renewed/extended before it expires. It may
+be desirable for an application to report this expiration date to
+the user, and a link to renew, before and/or after the activation
+expires.
 
 <img src="./images/Immutable_BlueOnWhite_Logo.png" align="right" width="100" height="50"/>
