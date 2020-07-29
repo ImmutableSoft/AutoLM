@@ -72,9 +72,8 @@ int main(int argc, const char **argv)
   AutoLm *lm = new AutoLm();
   char entityPassword[20 + 1];
   int entityPwdLength;
-
-  const char* strEntityPassword = argv[6];
-  size_t entityPasswordStrLength = strlen(strEntityPassword);
+  const char* strEntityPassword;
+  size_t entityPasswordStrLength;
   int res;
 
   // Entity, EntityId, Application, AppId, Mode, Password, CompId, Filename
@@ -98,6 +97,10 @@ int main(int argc, const char **argv)
 
     return -1;
   }
+
+  // Save the password string and length
+  strEntityPassword = argv[6];
+  entityPasswordStrLength = strlen(strEntityPassword);
 
   // Assign override machine id to force CompId from parameter list
   if ((argc >= 8) && ((argv[7][0] == '0') && (argv[7][1] == 'x')))

@@ -409,7 +409,23 @@ An example using the 'activate' command line tool to create a
 license activation file is below.
 
 ```bash
-./activate Mibtonix 3 Mibpeek 0 3 Passw\\0rd 0x5adb663c6fbb41a3a43fc74319696c63 ./license.elm
+$ ./activate
+Invalid number of arguments 1
+activate <entity name> <entity id> <app name> <app id>
+         <mode> <password> [comp id] [file name]
+
+  Create a locate product activation license file
+
+  <entity name> is Immutable Ecosystem Entity name
+  <entity id> is Immutable Ecosystem Entity Id
+  <product name> is Immutable Ecosystem Product name
+  <product id> is Immutable Ecosystem Product Id
+  <mode> is authenticate mode, 2 is MD5, 3 is SHA1
+  <password> string with escape characters ie. 'ThePassw\0rd'
+  [comp id] Optional. Computer/Machine Id, or current OS/PC if missing
+  [file name] Optional. Default is ./license.elm
+
+$ ./activate Mibtonix 3 Mibpeek 0 3 Passw\\0rd 0x5adb663c6fbb41a3a43fc74319696c63 ./license.elm
 ```
 
 ## Validate - Secure Blockchain Validation of Local Activation
@@ -439,7 +455,23 @@ receive your own unique product identifier that should be used within your
 application for product validations.
 
 ```bash
-./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
+$ ./validate
+Invalid number of arguments 1
+validate <entity name> <entity id> <app name> <app id>
+         <mode> <password> <file name>
+
+  Validate a locate product activation license file
+
+  <entity name> is Immutable Ecosystem Entity name
+  <entity id> is Immutable Ecosystem Entity Id
+  <product name> is Immutable Ecosystem Product name
+  <product id> is Immutable Ecosystem Product Id
+  <mode> is authenticate mode, 2 is MD5, 3 is SHA1
+  <password> password string, supports escape characters ie. 'Passw\0rd'
+  <infura id> the product ID from Infura.io
+  [file name] Optional. Default is ./license.elm
+
+$ ./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
 1
 ```
 

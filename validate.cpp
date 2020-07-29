@@ -74,12 +74,11 @@ int OverrideMachineId(char* comp_id)
 int main(int argc, const char **argv)
 {
   AutoLm *lm = new AutoLm();
-  char vendorPassword[20 + 1];
-  int nVendorPwdLength;
+  char entityPassword[20 + 1];
+  int entityPwdLength;
+  const char* strEntityPassword;
+  size_t entityPasswordStrLength;
   int res;
-
-  const char* strVendorPassword = argv[6];
-  size_t nVendorPasswordStrLength = strlen(strVendorPassword);
 
 #if AUTOLM_DEBUG
   // Entity, EntityId, App, AppId, Mode, Password, infuraId, <CompId>, <Filename>
@@ -111,16 +110,20 @@ int main(int argc, const char **argv)
     return -1;
   }
 
+  // Save the password string and length
+  strEntityPassword = argv[6];
+  entityPasswordStrLength = strlen(strEntityPassword);
+\
   // Return error if password is to long
-  if (nVendorPasswordStrLength > 20)
+  if (entityPasswordStrLength > 20)
   {
-    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strVendorPassword, nVendorPasswordStrLength);
+    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strEntityPassword, entityPasswordStrLength);
     return -1;
   }
 
   // Otherwise convert escape chars in password \char to char hex value
   else
-    nVendorPwdLength = lm->AutoLmPwdStringToBytes(strVendorPassword, vendorPassword);
+    entityPwdLength = lm->AutoLmPwdStringToBytes(strEntityPassword, entityPassword);
 
 #if AUTOLM_DEBUG
   // Assign override machine id to force CompId from parameter list
@@ -132,7 +135,7 @@ int main(int argc, const char **argv)
   if ((argc >= 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
   {
       res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-          vendorPassword, nVendorPwdLength, OverrideMachineId, argv[7]);
+          entityPassword, entityPwdLength, OverrideMachineId, argv[7]);
   }
 
   // Otherwise use the default Computer Id
@@ -140,7 +143,7 @@ int main(int argc, const char **argv)
 #endif
   {
       res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-          vendorPassword, nVendorPwdLength, NULL, argv[7]);
+          entityPassword, entityPwdLength, NULL, argv[7]);
   }
 
   // If initialization success, validate the license file
