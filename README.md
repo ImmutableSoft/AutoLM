@@ -78,7 +78,7 @@ Ropsten testnet (ie. leave code unchanged). With the entity and
 product reference from Immutable, call AutoLmInit() with a private
 mode and password to initialize the library.
 
-```
+```cpp
 /***********************************************************************/
 /* AutoLmInit: Initialize AutoLM with entity/product credentials       */
 /*                                                                     */
@@ -105,7 +105,7 @@ then the application may create a local activation with
 AutoLmCreateLicense() before calling AutoLmValidateLicense()
 again.
 
-```
+```cpp
 /***********************************************************************/
 /* AutoLmCreateLicense: Create blockchain activation license file      */
 /*                                                                     */
@@ -121,7 +121,7 @@ Ethereum database will be checked and if a new install the
 blockchainExpiredLicense error will be returned, indicating
 that this activation is not purchased or has expired.
 
-```
+```cpp
 /***********************************************************************/
 /* AutoLmValidateLicense: Determine validity of a license file         */
 /*                                                                     */
@@ -159,7 +159,7 @@ URL is returned in purchaseUrl, which may be useful (by the user
 and/or application) if the launch of the Chrome browser to open
 the URL fails.
 
-```
+```cpp
 /***********************************************************************/
 /* launchPurchaseDialog: Launch Dapp to activation purchase page       */
 /*                                                                     */
@@ -225,7 +225,7 @@ also returns the activation identifier needed to purchase or renew from
 Immutable if the error blockchainExpiredLicense is returned. It is possible
 to detect a renewal by checking if the returned expiration date is not zero.
 
-```
+```cpp
 int main()
 {
    // Allocate the Automatic License Manager object
@@ -380,7 +380,7 @@ is that the ID be unique per PC/OS, not application. The CompId
 command line tool takes no parameters and outputs the PC's unique
 global identifier.
 
-```
+```bash
 $ ./compid
 0x313fc746359696cb41a3a4adb663c6fb
 ```
@@ -408,7 +408,7 @@ transfer of crypto-currency (ETH), automating the sales process.
 An example using the 'activate' command line tool to create a
 license activation file is below.
 
-```
+```bash
 ./activate Mibtonix 3 Mibpeek 0 3 Passw\\0rd 0x5adb663c6fbb41a3a43fc74319696c63 ./license.elm
 ```
 
@@ -438,7 +438,7 @@ Please register you or your organization with [Infura](https://infura.io) to
 receive your own unique product identifier that should be used within your
 application for product validations.
 
-```
+```bash
 ./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
 1
 ```
