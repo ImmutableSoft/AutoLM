@@ -119,7 +119,12 @@ again.
 On the second call to AutoLmValidateLicense() the
 Ethereum database will be checked and if a new install the
 blockchainExpiredLicense error will be returned, indicating
-that this activation is not purchased or has expired.
+that this activation is not purchased or has expired. To access the
+Ethereum database requires an Infura Product Id, available for free
+from [Infura.io](https://infura.io/). Each Entity of the Immutable
+Ecosystem should use their own Infura product Id to avoid overuse
+and exceeding the daily limit of uses (currently 100,000 activation
+checks per day is supported with a free Infura account).
 
 ```cpp
 /***********************************************************************/
@@ -225,7 +230,18 @@ also returns the activation identifier needed to purchase or renew from
 Immutable if the error blockchainExpiredLicense is returned. It is possible
 to detect a renewal by checking if the returned expiration date is not zero.
 
+Replace the INFURA_PROJECT_ID below in TestApplication.cpp with the one
+you have created from Infura.io (see above for more information). For
+evaluation purposes you may contact us and request a copy of one of our
+Infura product Ids. For security purposes we cannot share this publicly,
+and your application should not either!
+
 ```cpp
+#define INFURA_PROJECT_ID "31dfbdd34717a744d19a29cddd623391" // Change this!
+#define LICENSE_FILE      "./license.elm"
+
+...
+
 int main()
 {
    // Allocate the Automatic License Manager object
