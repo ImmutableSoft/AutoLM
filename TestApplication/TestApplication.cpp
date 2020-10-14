@@ -165,13 +165,14 @@ int launchPurchaseDialog(ui64 entityId, ui64 productId,
   if (purchaseUrl)
   {
     sprintf(purchaseUrl,
-      "https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=0",
+      "https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s",
       entityIdStr, productIdStr, activationId);
   }
 
   // Create the URL with -app parameter for passing to the Chrome browser
   sprintf(bufLink,
-    "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s&promo=0",
+//    "--app=https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s",
+    "https://ecosystem.immutablesoft.org/?func=activation&entity=%s&product=%s&identifier=%s",
     entityIdStr, productIdStr, activationId);
   PRINTF("bufLink - '%s'\n", bufLink);
 
@@ -230,7 +231,7 @@ int main()
    if (lm)
    {
      time_t exp_date = 0;
-     ui64 resultingValue;
+     ui64 languages = 0, version_plat = 0;
      int licenseStatus;
      char vendorPassword[20 + 1];
      char buyHashId[44] = "";
@@ -238,9 +239,9 @@ int main()
      unsigned int nVendorPwdLength;
 
      // Reconfigure entity and product below to match Ecosystem
-     const char* entityName = "CreatorAuto1"; //From Immutable Ecosystem
-     const char* product = "GameProduct";
-     ui64 entityId = 3; // From Immutable Ecosystem, static per application
+     const char* entityName = "Software Creator"; //From Immutable Ecosystem
+     const char* product = "HomeCooking";
+     ui64 entityId = 2; // From Immutable Ecosystem, static per application
      ui64 productId = 1; // From Immutable Ecosystem, static per application
 
      // Populate the Infura ID with your specific id
@@ -259,7 +260,7 @@ int main()
      for (;;)
      {
        switch (licenseStatus = lm->AutoLmValidateLicense(LICENSE_FILE,
-                                 &exp_date, buyHashId, &resultingValue))
+                                 &exp_date, buyHashId, &languages, &version_plat))
        {
          // If valid, display the activation expiration
          case licenseValid:

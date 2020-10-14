@@ -46,7 +46,7 @@
 
 #ifndef _CREATEONLY
 
-#include "curl/curl.h"
+#include <curl/curl.h>
 
 #define MAX_SIZE_JSON_RESPONSE     1024
 #define BLOCK_CHAIN_CHAR           ':' /* use colon as special char */
@@ -164,7 +164,7 @@ static void encode_json_params(char* functionId, ui64 entitiId,
 /*     Returns: the unpacked ui64 bit value of the parameter           */
 /*                                                                     */
 /***********************************************************************/
-static ui64 unpack_param_value(char* param)
+static ui64 unpack_256bit_value(char* param)
 {
   ui64 ll = 0;
   int n = 0;
@@ -206,6 +206,55 @@ static ui64 unpack_param_value(char* param)
 }
 
 /***********************************************************************/
+/* unpack_param_value: Convert 256 bit integer hex string to ui64 value*/
+/*                                                                     */
+/*      Inputs: param = the 256 bit integer hex string                 */
+/*                                                                     */
+/*     Returns: the unpacked ui64 bit value of the parameter           */
+/*                                                                     */
+/***********************************************************************/
+static ui64 unpack_64bit_value(char* param)
+{
+  ui64 ll = 0;
+  int n = 0;
+  ui64 llpower16 = 0;
+  for (int i = 0; i < 16; i++)
+  {
+    if (isdigit(param[15 - i]))
+    {
+      n = param[15 - i] - 0x30; // 0x30 - 0
+    }
+    else if (isxdigit(param[15 - i]))
+    {
+      if (isupper(param[15 - i]))
+      {
+        n = param[15 - i] - 0x41 + 10; // 0x65 - A
+      }
+      else
+      {
+        n = param[15 - i] - 0x61 + 10; // 0x61 - a
+      }
+    }
+    if (i == 0)
+    {
+      ll += n;
+      llpower16 = 1;
+    }
+    else
+    {
+      llpower16 *= 16;
+      if (n > 0)
+      {
+        ll += n * llpower16;
+      }
+    }
+  }
+
+  PRINTF("ll = %llu\n", ll);
+  return ll;
+}
+
+/***********************************************************************/
 /* parse_json_result: Parse resulting licenseStatus() activation value */
 /*                                                                     */
 /*      Inputs: param = the 256 bit integer hex string                 */
@@ -214,7 +263,7 @@ static ui64 unpack_param_value(char* param)
 /*                                                                     */
 /***********************************************************************/
 static int parse_json_result(const char* jsonResult, time_t* exp_dat,
-                             ui64* ret_value)
+                             ui64* languages, ui64 *version_plat)
 {
   size_t cnt = 0;
   int ret = 0;
@@ -239,49 +288,109 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat,
     cnt = strlen(tmpstr);
     if (cnt > 0)
     {
-      int nParamsCount = (int)cnt / 64;
+      int nParamsCount = (int)cnt / 16;//64;
       PRINTF("nParamsCount = %d\n", nParamsCount);
-      if (nParamsCount == 3)
+      if (nParamsCount == 8)
       {
-        ui64 llParams[3];
+        ui64 llParams[8];
         for (int i = 0; i < nParamsCount; i++)
         {
-          strncpy(s_tmp, &(tmpstr[i * 64]), 64);
-          s_tmp[64] = 0;
+          strncpy(s_tmp, &(tmpstr[i * 16/*64*/]), 16/*64*/);
+          s_tmp[16] = 0;
           PRINTF("param[%d] - %s\n", i, s_tmp);
-          llParams[i] = unpack_param_value(s_tmp);
+          llParams[i] = unpack_64bit_value(s_tmp);
         }
-        if ((llParams[0] == 0) && (llParams[1] == 0) &&
-            (llParams[2] == 0))
+
+        // If entity, product and flags, expiration zero, not found
+        if ((llParams[1] == 0) && (llParams[2] == 0))
         {
            if (exp_dat)
              *exp_dat = 0;
-           if (ret_value)
-             *ret_value = 0;
+           if (languages)
+             *languages = 0;
+           if (version_plat)
+             *version_plat = 0;
 
+           PRINTF("No Activation present\n");
            ret = blockchainExpiredLicense;
         }
 
-        // If the activation value is one or greater (valid), return it
-        else if (llParams[0] >= 1)
+        // If the flags/expiration value is one or greater (valid), parse
+        else if (llParams[1] > 0)
         {
           if (exp_dat)
-            *exp_dat = llParams[1];
-          if (ret_value)
-            *ret_value = llParams[0];
+          {
+            // If expiration flag set, save the expiration
+            if ((llParams[1] >> 32) & 1)
+              *exp_dat = (llParams[1] & 0xFFFFFFFF); // lsb of bits 128-192
+            else
+              *exp_dat = 0; // lsb of bits 128-192
+            PRINTF("Expiration set %d\n", *exp_dat);
+          }
 
-          ret = licenseValid;
+          // Activation has limitation flag set
+          if ((llParams[1] >> 32) & 2)
+          {
+            if (languages)
+            {
+              // Save the languages limitations
+              *languages = llParams[2];
+            }
+            if (version_plat)
+            {
+              // Save the languages limitations
+              *version_plat = llParams[3];
+            }
+            PRINTF("License valid, languages 0x%x, version/plat 0x%x\n",
+                   *languages, *version_plat);
+            ret = licenseValid;
+          }
+
+          // Activation has feature flag set
+          else if ((llParams[1] >> 32) & 8)
+          {
+            if (languages)
+            {
+              // Save the languages limitations
+              *languages = llParams[2];
+            }
+            if (version_plat)
+            {
+              // Save the languages limitations
+              *version_plat = llParams[3];
+            }
+            PRINTF("Feature found, languages 0x%x, version/plat 0x%x\n",
+                   *languages, *version_plat);
+            ret = applicationFeature;
+          }
         }
 
         // Otherwise not found/valid
         else
-          ret = blockchainAuthenticationFailed;
+        {
+           if (exp_dat)
+             *exp_dat = 0;
+           if (languages)
+             *languages = 0;
+           if (version_plat)
+             *version_plat = 0;
+
+           ret = blockchainExpiredLicense;
+        }
       }
       else
       {
         PRINTF("json params count not valid count = %d\n",
                nParamsCount);
-        ret = blockchainAuthenticationFailed;
+           if (exp_dat)
+             *exp_dat = 0;
+           if (languages)
+             *languages = 0;
+           if (version_plat)
+             *version_plat = 0;
+
+           ret = blockchainExpiredLicense;
+//        ret = blockchainAuthenticationFailed;
       }
     }
     else
@@ -340,7 +449,7 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 /*                                                                     */
 /***********************************************************************/
 static int autolm_read_activation(char* infuraId, char* jsonData,
-                                 time_t* exp_dat, ui64* ret_value)
+                  time_t* exp_dat, ui64* languages, ui64* version_plat)
 {
   int res;
 
@@ -415,7 +524,8 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
   if (curl_easy_perform(easy) == 0)
   {
     // Parse the result value and expiration date
-    res = parse_json_result(curlResponseMemory, exp_dat, ret_value);
+    res = parse_json_result(curlResponseMemory, exp_dat, languages,
+                            version_plat);
   }
   else
   {
@@ -442,7 +552,8 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
 /*                                                                     */
 /***********************************************************************/
 int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
-                     char* infuraId, time_t* exp_date, ui64* ret_value)
+                     char* infuraId, time_t* exp_date, ui64* languages,
+                     ui64 *version_plat)
 {
   char jsonParams[(4 * 64) + 10 + 1];// 4x 256 values + 10 functionId + 1
   char funcId[] = LICENSE_STATUS_ID;
@@ -480,7 +591,7 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   jsonDataAll[nDataLength] = 0;
   PRINTF("jsonData = %s\n", jsonDataAll);
   return autolm_read_activation(infuraId, jsonDataAll, exp_date,
-                                ret_value);
+                                languages, version_plat);
 }
 #endif /* ifndef _CREATEONLY */
 
@@ -592,13 +703,15 @@ int DECLARE(AutoLm) AutoLmInit(const char* entity, ui64 entityId,
 /*       Input: filename = full filename of license file (may change)  */
 /*     Outputs: exp_date = the resulting expiration day/time           */
 /*              buyHashId = resulting activation hash to purchase      */
-/*              resultValue = resulting value of the activation        */
+/*              languages = resulting language limitations             */
+/*              version_plat = resulting version or platform limits    */
 /*                                                                     */
 /*     Returns: the immutable value of license, otherwise zero (0)     */
 /*                                                                     */
 /***********************************************************************/
 int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
-                    time_t *exp_date, char* buyHashId, ui64 *resultValue)
+                    time_t *exp_date, char* buyHashId, ui64 *languages,
+                    ui64 *version_plat)
 {
   FILE *pFILE;
   char tmp[170],tmpstr[170], tmpstr1[170];
@@ -909,7 +1022,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
       rval = AutoLmOne.blockchainValidate(loc_entityid, loc_productid,
                                           loc_hash, // hash is activation
                                           AutoLmOne.infuraProductId,
-                                          exp_date, resultValue);
+                                          exp_date, languages, version_plat);
 
       // If the license is expired copy the activation id for caller
       if (rval == blockchainExpiredLicense)

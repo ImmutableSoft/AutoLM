@@ -30,8 +30,7 @@ EXTRAS = -ggdb -O0 -Wno-multichar -DWIN32 -D_MINGW -D_WINDOWS -D_UNIX -DCURL_STA
 
 CPPFLAGS = -Wall $(EXTRAS)
 CFLAGS = -Wall $(EXTRAS)
-INCLUDES = -I"." -I"./base" \
-           -I$(CURLCPPDIR)/include
+INCLUDES = -I"." -I"./base"
 
 ## 
 ## Global Makefile settings
@@ -113,24 +112,24 @@ libauto: $(LIBAUTO)
 
 compid: $(COMPID)
 	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE -Wno-multichar CompId.cpp \
-                -mwindows -lstdc++
+                -lstdc++
 
 validate: $(VALIDATE)
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(VALIDATEEXE) validate.cpp \
 	               $(VALIDATE) \
-                 -mwindows -lcurl -lssl -lcrypto \
+                 -lcurl -lssl -lcrypto \
                  -lnghttp2 -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
 
 testapplication: $(TESTAPPLICATION)
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(TESTAPPLICATIONEXE) \
                  $(TESTAPPLICATION) \
-                 -L. -lautolm -mwindows -lcurl -lssl -lcrypto \
+                 -L. -lautolm -lcurl -lssl -lcrypto \
                  -lnghttp2 -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
 
 activate: $(ACTIVATE)
 	$(CPP) $(CPPFLAGS) -D_CREATEONLY $(INCLUDES) -o $(ACTIVATEEXE) autolm.cpp \
 	               $(ACTIVATE) \
-                 -mwindows -lstdc++
+                 -lstdc++
 
 
 # For libcurl static, remaning shared

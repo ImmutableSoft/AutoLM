@@ -32,9 +32,15 @@
 /***********************************************************************/
 #ifndef _AUTOLM_H
 #define _AUTOLM_H
+#ifdef _MIBSIM
+#include "common.h"
+#include "sha1.h"
+#include "md5.h"
+#else
 #include "base/common.h"
 #include "base/sha1.h"
 #include "base/md5.h"
+#endif
 
 /***********************************************************************/
 /* Configuration                                                       */
@@ -49,14 +55,14 @@
 // Be sure to use the same network for both URL and contract address
 //   Both should be for Ropsten or Main Network
 #define CURL_HOST_URL              ROPSTEN_INFURA_URL
-#define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_LICENSE_CONTRACT
+#define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_ACTIVATE_CONTRACT
 
 // Options are Ropsten or Local Ganache. Main Network coming soon!
 #define ROPSTEN_INFURA_URL         "https://ropsten.infura.io/v3/"
 #define LOCAL_GANACHE_URL          "http://localhost:8545/"
 
 // Debugging options
-#define AUTOLM_DEBUG               0 // 1 to Enable debug output
+#define AUTOLM_DEBUG               1 // 1 to Enable debug output
 #if AUTOLM_DEBUG
 #define   PRINTF                   printf
 #else
@@ -66,10 +72,18 @@
 // Immutable Ecosystem
 //   DO NOT EDIT BELOW
 
+// Deprecated 1.0
 // Keccak256 ("licenseStatus(uint256, uint256, uint256)") =
 // 0x9277d3d6b97556c788e9717ce4902c3a0c92314558dc2f0dad1e0d0727f04629
-#define LICENSE_STATUS_ID          "0x9277d3d6"
-#define ROPSTEN_LICENSE_CONTRACT   "0x21027DD05168A559330649721D3600196aB0aeC2"
+//#define LICENSE_STATUS_ID          "0x9277d3d6"
+
+// Current 2.0
+// Keccak256 ("activateStatus(uint256, uint256, uint256)") =
+// 0x1da7d8648240b9b4db8c4f11fcd46bf2ccd74be6fdf20e075e3cd1541a3ecae1
+#define LICENSE_STATUS_ID          "0x1da7d864"
+// 1.0 deprecated
+//#define ROPSTEN_LICENSE_CONTRACT   "0x21027DD05168A559330649721D3600196aB0aeC2"
+#define ROPSTEN_ACTIVATE_CONTRACT   "0x5A516379F798b1D5b1875fb3efDCdbCfe199De42"
 #define GANACHE_LICENSE_CONTRACT   "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
 
 /***********************************************************************/
@@ -95,6 +109,7 @@ enum AutoLmResponse
   blockchainExpiredLicense,
   blockchainAuthenticationFailed,
   curlPerformFailed,
+  applicationFeature, // Not an error necessarily
   otherLicenseError
 };
 
@@ -111,7 +126,7 @@ typedef struct AutoLmConfig
   ui64 productid;
   ui8 password[21];
   int mode;
-  int (*blockchainValidate)(ui64, ui64, char*, char*, time_t*, ui64*);
+  int (*blockchainValidate)(ui64, ui64, char*, char*, time_t*, ui64*, ui64*);
   int (*getComputerId)(char *);
   char computerId[35];
   char infuraProductId[35];
@@ -141,7 +156,8 @@ public:
                  const char* infuraId);
 
   int AutoLmValidateLicense(const char* filename, time_t *exp_date,
-                            char* buyActivationId, ui64 *resultValue);
+                            char* buyActivationId, ui64 *langauges,
+                            ui64 *version_plat);
   int AutoLmCreateLicense(const char* filename);
 
   int AutoLmPwdStringToBytes(const char* password, char* byteResult);
