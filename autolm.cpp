@@ -46,7 +46,7 @@
 
 #ifndef _CREATEONLY
 
-#include <curl/curl.h>
+#include "curl/curl.h"
 
 #define MAX_SIZE_JSON_RESPONSE     1024
 #define BLOCK_CHAIN_CHAR           ':' /* use colon as special char */
@@ -325,7 +325,7 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat,
               *exp_dat = (llParams[1] & 0xFFFFFFFF); // lsb of bits 128-192
             else
               *exp_dat = 0; // lsb of bits 128-192
-            PRINTF("Expiration set %d\n", *exp_dat);
+            PRINTF("Expiration set %ld\n", *exp_dat);
           }
 
           // Activation has limitation flag set
@@ -341,7 +341,7 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat,
               // Save the languages limitations
               *version_plat = llParams[3];
             }
-            PRINTF("License valid, languages 0x%x, version/plat 0x%x\n",
+            PRINTF("License valid, languages 0x%llx, version/plat 0x%llx\n",
                    *languages, *version_plat);
             ret = licenseValid;
           }
@@ -359,7 +359,7 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat,
               // Save the languages limitations
               *version_plat = llParams[3];
             }
-            PRINTF("Feature found, languages 0x%x, version/plat 0x%x\n",
+            PRINTF("Feature found, languages 0x%llx, version/plat 0x%llx\n",
                    *languages, *version_plat);
             ret = applicationFeature;
           }
@@ -724,7 +724,7 @@ int DECLARE(AutoLm) AutoLmValidateLicense(const char *filename,
   char* stopstring;
   ui8 gen_lMAC[20], hash_octet[20];
   int i, authlen, hashlen, rval, hostidlen;
-  ui64 loc_entityid, loc_productid;
+  ui64 loc_entityid = 0, loc_productid = 0;
   bool in_entity = false, in_app = false, app_parsed = false;
 
   rval = otherLicenseError;
@@ -1219,6 +1219,8 @@ int DECLARE(AutoLm) AutoLmCreateLicense(const char* filename)
         fputs(infoString, pFILE);
         fclose(pFILE);
       }
+      else
+        return -5; // could not open for writing
     }
   }
   else
@@ -1287,7 +1289,7 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
   entityPwdLength = nPwdLength;
 
 #if AUTOLM_DEBUG
-  PRINTF("entityPassword - '%s', entityPwdLength = %d\n", entityPassword,
+  PRINTF("entityPassword - '%s', entityPwdLength = %ld\n", entityPassword,
          entityPasswordLength);
   PRINTF("entityPassword - [");
 

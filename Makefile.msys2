@@ -25,8 +25,8 @@ LINK = /bin/sh /usr/bin/libtool --mode=link c++
 ## Definitions:
 ##
 # need -DCURL_STATICLIB for static build
-EXTRAS = -ggdb -O0 -Wno-multichar -DWIN32 -D_MINGW -D_WINDOWS -D_UNIX -DCURL_STATICLIB
-#EXTRAS = -O3 -Wno-multichar -fexpensive-optimizations -DWIN32 -D_MINGW -D_WINDOWS -D_UNIX -DCURL_STATICLIB
+#EXTRAS = -ggdb -O0 -Wno-multichar                    -DWIN32 -D_MINGW -D_WINDOWS -D_UNIX -D_OPENSSL -DCURL_STATICLIB
+EXTRAS = -O2 -Wno-multichar -fexpensive-optimizations -DWIN32 -D_MINGW -D_WINDOWS -D_UNIX -D_OPENSSL -DCURL_STATICLIB
 
 CPPFLAGS = -Wall $(EXTRAS)
 CFLAGS = -Wall $(EXTRAS)
@@ -112,24 +112,21 @@ libauto: $(LIBAUTO)
 
 compid: $(COMPID)
 	$(CPP) -o $(COMPIDEXE) -D_WINDOWS -D_STANDALONE -Wno-multichar CompId.cpp \
-                -lstdc++
+                $(LIBS)
 
 validate: $(VALIDATE)
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(VALIDATEEXE) validate.cpp \
-	               $(VALIDATE) \
-                 -lcurl -lssl -lcrypto \
-                 -lnghttp2 -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
+	            $(VALIDATE) \
+                $(CURLLIB) $(LIBS)
 
 testapplication: $(TESTAPPLICATION)
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(TESTAPPLICATIONEXE) \
                  $(TESTAPPLICATION) \
-                 -L. -lautolm -lcurl -lssl -lcrypto \
-                 -lnghttp2 -lpsl -lidn2 -liconv -lstdc++ -lz -lunistring
+                 -L. -lautolm $(CURLLIB) $(LIBS)
 
 activate: $(ACTIVATE)
 	$(CPP) $(CPPFLAGS) -D_CREATEONLY $(INCLUDES) -o $(ACTIVATEEXE) autolm.cpp \
-	               $(ACTIVATE) \
-                 -lstdc++
+	               $(ACTIVATE) $(LIBS)
 
 
 # For libcurl static, remaning shared
@@ -141,6 +138,7 @@ clean:
 	$(RM) *.o
 	$(RM) ./base/*.o
 	$(RM) libautolm.so
+	$(RM) libautolm.a
 	$(RM) compid.exe
 	$(RM) activate.exe
 	$(RM) validate.exe
