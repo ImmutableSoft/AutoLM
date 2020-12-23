@@ -4,6 +4,13 @@ Debug/*
 Release/*
 .vs/*
 build/*
+TestApplication/x64/*
+TestApplication/Debug/*
+TestApplication/Release/*
+*.stackdump
+*.user
+*.filters
+*.elm
 
 # Prerequisites
 *.d

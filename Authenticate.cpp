@@ -1,8 +1,8 @@
 /***********************************************************************/
 /*                                                                     */
-/*   Module:  validate.cpp                                             */
+/*   Module:  authenticate.cpp                                         */
 /*   Version: 2020.0                                                   */
-/*   Purpose: Command line local activation file blockchain validation */
+/*   Purpose: Command line local authenticate file with blockchain     */
 /*                                                                     */
 /*---------------------------------------------------------------------*/
 /*                                                                     */
@@ -36,29 +36,9 @@
 #include <string.h>
 
 #include "autolm.h"
+#include "base/sha256.h"
 
-#if AUTOLM_DEBUG
-/***********************************************************************/
-/* OverrideMachineId: Save and return the machine id                   */
-/*                                                                     */
-/*      Inputs: comp_id = IN/OUT the machine-id from User              */
-/*                          First call initializes machine-id          */
-/*                          Subsequent calls return machine-id         */
-/*                                                                     */
-/*     Returns: length of OUT comp_id if success, otherwise error      */
-/*                                                                     */
-/***********************************************************************/
-int OverrideMachineId(char* comp_id)
-{
-    static char ComputerId[64] = "";
-
-    // First time initialize
-    if (ComputerId[0] == 0)
-        strcpy(ComputerId, comp_id);
-    strcpy(comp_id, ComputerId);
-    return (int)strlen(ComputerId);
-}
-#endif
+using std::string;
 
 /***********************************************************************/
 /*        main: Main application entry point                           */
@@ -73,81 +53,87 @@ int OverrideMachineId(char* comp_id)
 /***********************************************************************/
 int main(int argc, const char **argv)
 {
-  AutoLm *lm = new AutoLm();
-  char entityPassword[20 + 1];
-  int entityPwdLength;
-  const char* strEntityPassword;
-  size_t entityPasswordStrLength;
   int res;
+  FILE* pFILE;
+  char buffer[1024];
+  size_t result;
+  unsigned char digest[SHA256::DIGEST_SIZE];
+  SHA256 ctx = SHA256();
 
-#if AUTOLM_DEBUG
-  // Entity, EntityId, App, AppId, Mode, Password, infuraId, <CompId>, <Filename>
-  if ((argc < 8) || (argc > 10))
-#else
-  // Entity, EntityId, App, AppId, Mode, Password, infuraId, <Filename>
-  if ((argc < 8) || (argc > 9))
-#endif
+  // Executable name, Filename, Infura Product ID
+  if ((argc < 3) || (argc > 3))
   {
     printf("Invalid number of arguments %d", argc);
     puts("");
-    puts("validate <entity name> <entity id> <app name> <app id>");
-    puts("         <mode> <password> <infura id> <file name>");
+    puts("authenticate <entity id> <app id> <file name>");
     puts("");
-    puts("  Validate a locate product activation license file");
+    puts("  Authenticate a digital file with creator release.");
+    puts("    Returns version of release on success.");
     puts("");
-    puts("  <entity name> is Immutable Ecosystem Entity name");
-    puts("  <entity id> is Immutable Ecosystem Entity Id");
-    puts("  <product name> is Immutable Ecosystem Product name");
-    puts("  <product id> is Immutable Ecosystem Product Id");
-    puts("  <mode> is authenticate mode, 2 is MD5, 3 is SHA1");
-    puts("  <password> password string, supports escape characters ie. 'Passw\\0rd'");
-    puts("  <infura id> the product ID from Infura.io");
-#if AUTOLM_DEBUG
-    puts("  [comp id] Optional. Computer/Machine Id, or current OS/PC if missing");
-#endif
-    puts("  [file name] Optional. Default is ./license.elm");
+    puts("  <file name> The file to verify authenticity of");
+    puts("  <infura id> Your infura.io product id");
 
     return -1;
   }
 
-  // Save the password string and length
-  strEntityPassword = argv[6];
-  entityPasswordStrLength = strlen(strEntityPassword);
+  // Clear the digest before SHA256 computation
+  memset(digest, 0, SHA256::DIGEST_SIZE);
 
-  // Return error if password is to long
-  if (entityPasswordStrLength > 20)
+  /*-------------------------------------------------------------------*/
+  /* First, open the file passed from the command line.                */
+  /*-------------------------------------------------------------------*/
+  pFILE = fopen(argv[1], "rb");
+  if (pFILE == NULL) { fputs("File error", stderr); exit(1); }
+
+  // Initialize the computation of SHA256 checksum of file
+  ctx.Sha256Init();
+
+  // Read a portion of the file into the buffer and update SHA256
+  while ((result = fread(buffer, 1, 1024, pFILE)) > 0)
+    ctx.Sha256Update((unsigned char*)buffer, (unsigned int)result);
+
+  // Finalize the SHA256 checksum
+  ctx.Sha256Final(digest);
+
+  char buf[2 * SHA256::DIGEST_SIZE + 1];
+  buf[2 * SHA256::DIGEST_SIZE] = 0;
+  for (int i = 0; i < SHA256::DIGEST_SIZE; i++)
+    sprintf(&buf[i * 2], "%02x", digest[i]);
+
+  // the whole file is now loaded in the memory buffer.
+
+  fclose(pFILE);
+
+  // If checksum complete (file exists, etc.), check blockchain
+  printf("  File %s\n  SHA256 checksum: %s\n", argv[1], buf);
+
+  ui64 entityId, productId, releaseId, languages, version;
+  char uri[512];
+
+  res = AutoLmAuthenticateFile((const char *)buf, argv[2], &entityId, &productId,
+                               &releaseId, &languages, &version, uri);
+
+  // Output the resulting  if success
+  if (res == 0)
   {
-    printf("vendorPassword argument '%s' length is %zd, max value is 20 characters\n", strEntityPassword, entityPasswordStrLength);
-    return -1;
-  }
+    puts("  File authentication found on blockchain");
+    printf("    Version %d.%d.%d.%d\n",
+           (ui32)((version & 0xFFFF000000000000) >> 48),
+           (ui32)((version & 0x0000FFFF00000000) >> 32),
+           (ui32)((version & 0x00000000FFFF0000) >> 16),
+           (ui32)((version & 0x000000000000FFFF)));
+    printf("    Release #%llu for entity %llu and product %llu.\n",
+           releaseId, entityId, productId);
 
-  // Otherwise convert escape chars in password \char to char hex value
+    // Display if URI requested and result is not empty string
+    if (uri && (uri[0] != '\0'))
+      printf("    URI is %s\n", uri);
+    else
+      printf(" URI is empty\n");
+  }
   else
-    entityPwdLength = lm->AutoLmPwdStringToBytes(strEntityPassword, entityPassword);
-
-#if AUTOLM_DEBUG
-  // Assign override machine id to force CompId from parameter list
-  if ((argc >= 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
-      OverrideMachineId((char*)argv[8]);
-
-  // Initialize the AutoLM class with the passed parameters
-  // If computer id passed, use instead of local OS/PC
-  if ((argc >= 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
-  {
-      res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-          entityPassword, entityPwdLength, OverrideMachineId, argv[7]);
-  }
-
-  // Otherwise use the default Computer Id
-  else
-#endif
-  {
-      res = lm->AutoLmInit(argv[1], atoi(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]),
-          entityPassword, entityPwdLength, NULL, argv[7]);
-  }
-
-  // If initialization success, validate the license file
-  PRINTF(" %d Validating license file...", res);
+    printf(" ERROR - Unverified %d!\n", res);
+  /*
   if (res == 0)
   {
     time_t expireTime = 0;
@@ -164,7 +150,7 @@ int main(int argc, const char **argv)
       res = lm->AutoLmValidateLicense(argv[8], &expireTime, buyHashId, &languages, &version_plat);
     else if (argc == 8)
         res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &languages, &version_plat);
-    PRINTF(" validated %d, expires on %u\n", res, (ui32)expireTime);
+    PRINTF(" validated %d, expires on %lu\n", res, expireTime);
     printf("%llu\n", languages);
     printf("%llu\n", version_plat);
     return (int)res;
@@ -172,8 +158,6 @@ int main(int argc, const char **argv)
 
   // Otherwise, initialization failed, return zero
   else
-  {
-    printf("0\n");
-    return 0;
-  }
+*/
+  return res;
 }

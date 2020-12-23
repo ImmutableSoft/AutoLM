@@ -54,8 +54,9 @@
 //
 // Be sure to use the same network for both URL and contract address
 //   Both should be for Ropsten or Main Network
-#define CURL_HOST_URL              ROPSTEN_INFURA_URL
-#define IMMUTABLE_LICENSE_CONTRACT ROPSTEN_ACTIVATE_CONTRACT
+#define CURL_HOST_URL              /*LOCAL_GANACHE_URL*/ROPSTEN_INFURA_URL
+#define IMMUTABLE_LICENSE_CONTRACT /*GANACHE_ACTIVATE_CONTRACT*/ROPSTEN_ACTIVATE_CONTRACT
+#define IMMUTABLE_PRODUCT_CONTRACT /*GANACHE_AUTHENTICATE_CONTRACT*/ROPSTEN_AUTHENTICATE_CONTRACT
 
 // Options are Ropsten or Local Ganache. Main Network coming soon!
 #define ROPSTEN_INFURA_URL         "https://ropsten.infura.io/v3/"
@@ -78,13 +79,23 @@
 //#define LICENSE_STATUS_ID          "0x9277d3d6"
 
 // Current 2.0
-// Keccak256 ("activateStatus(uint256, uint256, uint256)") =
+// Keccak256 ("activateStatus(uint256,uint256,uint256)") =
 // 0x1da7d8648240b9b4db8c4f11fcd46bf2ccd74be6fdf20e075e3cd1541a3ecae1
-#define LICENSE_STATUS_ID          "0x1da7d864"
+#define LICENSE_STATUS_ID             "0x1da7d864"
+// Current 2.0
+// Keccak256 ("productReleaseHashDetails(uint256)") =
+// 0x383b0dc957c44bc30e1199cccf10da0a4b332b9c07e800a620df21dd251df7e3
+#define PRODUCT_STATUS_ID             "0x383b0dc9"
+
 // 1.0 deprecated
-//#define ROPSTEN_LICENSE_CONTRACT   "0x21027DD05168A559330649721D3600196aB0aeC2"
-#define ROPSTEN_ACTIVATE_CONTRACT   "0x5A516379F798b1D5b1875fb3efDCdbCfe199De42"
-#define GANACHE_LICENSE_CONTRACT   "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
+//#define ROPSTEN_LICENSE_CONTRACT     "0x21027DD05168A559330649721D3600196aB0aeC2"
+
+// Ropsten activate and product contracts
+#define ROPSTEN_ACTIVATE_CONTRACT     "0x5A516379F798b1D5b1875fb3efDCdbCfe199De42"
+#define GANACHE_ACTIVATE_CONTRACT     "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
+
+#define ROPSTEN_AUTHENTICATE_CONTRACT "0x4DA001F154683A67F5B817229c34Ce50aa6F3281"
+#define GANACHE_AUTHENTICATE_CONTRACT "0xD833215cBcc3f914bD1C9ece3EE7BF8B14f841bb"
 
 /***********************************************************************/
 /* Type Definitions                                                    */
@@ -107,6 +118,7 @@ enum AutoLmResponse
   blockchainEntityIdNoMatch, /* 10 */
   blockchainProductidNoMatch,
   blockchainExpiredLicense,
+  blockchainNotFound,
   blockchainAuthenticationFailed,
   curlPerformFailed,
   applicationFeature, // Not an error necessarily
@@ -137,6 +149,10 @@ typedef struct AutoLmConfig
 /***********************************************************************/
 // From compid.cpp or equivalent
 extern int AutoLmMachineId(char* comp_id);
+
+int AutoLmAuthenticateFile(const char* hashId, const char* infuraId, ui64* entityId,
+  ui64* productId, ui64* releaseId, ui64* languages, ui64* version,
+  char* uri);
 
 /***********************************************************************/
 /* Class  declarations                                                 */

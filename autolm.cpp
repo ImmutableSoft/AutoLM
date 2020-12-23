@@ -57,26 +57,28 @@
 */
 
 /***********************************************************************/
-/* pack_hash_to_32bytes: Pack a hash string to 32 byte array.          */
+/* pack_hash_to_bytes: Pack a hex string to 64 byte (256 bit) string.  */
 /*                                                                     */
 /*       Input: hash = the hash as a hex string                        */
-/*      Output: buf = the resulting hash as a 32byte array             */
+/*      Output: buf = the resulting hash as a 64byte array             */
 /*                                                                     */
 /*    (ex. sha3 0x75c412bb58976d1b83bcade11e0df6679c47a281)            */
 /*                                                                     */
 /***********************************************************************/
-static void pack_hash_to_32bytes(char* hash, char* buf)
+static void pack_hash_to_bytes(const char* hash, char* buf)
 {
   char * bytes = buf;
+  size_t length = strlen(hash);
+  ui32 i;
 
   // Fill result buffer with zero strings and NULL terminate
-  for (int i = 0; i < 64; i++)
+  for (i = 0; i < 64; i++)
     bytes[i] = '0';
   bytes[64] = 0;
 
   // Fill the end of the buffer up with the hash
-  for (int i = 0; i < 40; i++)
-    bytes[63 - i] = hash[39 - i];
+  for (i = 0; i < length; i++)
+    bytes[(length - 1) - i] = hash[(length - 1) - i];
 }
 
 /***********************************************************************/
@@ -124,7 +126,7 @@ static void pack_ll32bytes(ui64 ll, char* buf)
 }
 
 /***********************************************************************/
-/* encode_json_params: Encode the JSON params for three parameter call */
+/* encode_activate_json: Encode JSON params for three parameter call   */
 /*               anyFunction(uint256, uint256, uint256)                */
 /*                                                                     */
 /*      Inputs: functionId = Keccak256(anyFunction(uint256, uint256,   */
@@ -135,8 +137,8 @@ static void pack_ll32bytes(ui64 ll, char* buf)
 /*     Outputs: params    = the resulting parameters as a hex string   */
 /*                                                                     */
 /***********************************************************************/
-static void encode_json_params(char* functionId, ui64 entitiId,
-                               ui64 productId, char* hash, char* params)
+static void encode_activate_json(char* functionId, ui64 entitiId,
+                                ui64 productId, char* hash, char* params)
 {
   size_t nLen = strlen(functionId);
 
@@ -153,7 +155,29 @@ static void encode_json_params(char* functionId, ui64 entitiId,
   nLen = strlen(params);
 
   // Finally encode the activation identifier hash
-  pack_hash_to_32bytes(&hash[2], params + nLen);
+  pack_hash_to_bytes(&hash[2], params + nLen);
+}
+
+/***********************************************************************/
+/* encode_authenticate_json: Encode JSON params for one parameter call */
+/*               anyFunction(uint256)                                  */
+/*                                                                     */
+/*      Inputs: functionId = Keccak256(anyFunction(uint256))           */
+/*              hash      = the file sha256 checksum and identifier    */
+/*     Outputs: params    = the resulting parameters as a hex string   */
+/*                                                                     */
+/***********************************************************************/
+static void encode_authenticate_json(char* functionId, const char* hash,
+                                     char* params)
+{
+  size_t nLen = strlen(functionId);
+
+  // First encode the function identifier
+  memcpy(params, functionId, nLen);
+  params[nLen] = 0;
+
+  // Encode the file sha256 checksum identifier
+  pack_hash_to_bytes(hash, params + nLen);
 }
 
 /***********************************************************************/
@@ -255,20 +279,20 @@ static ui64 unpack_64bit_value(char* param)
 }
 
 /***********************************************************************/
-/* parse_json_result: Parse resulting licenseStatus() activation value */
+/* parse_activation_json: Parse resulting licenseStatus() activation   */
 /*                                                                     */
-/*      Inputs: param = the 256 bit integer hex string                 */
+/*      Inputs: jsonResult = the 256 bit integer hex string                 */
 /*                                                                     */
 /*     Returns: the unpacked ui64 bit value of the parameter           */
 /*                                                                     */
 /***********************************************************************/
-static int parse_json_result(const char* jsonResult, time_t* exp_dat,
-                             ui64* languages, ui64 *version_plat)
+static int parse_activation_json(const char* jsonResult, time_t* exp_dat,
+                                 ui64* languages, ui64 *version_plat)
 {
   size_t cnt = 0;
   int ret = 0;
  
-  PRINTF("parse_json_result()\n jsonResult-%s\n", jsonResult);
+  PRINTF("parse_activation_json()\n jsonResult-%s\n", jsonResult);
 
   /*-------------------------------------------------------------------*/
   /* see if json result has 0x hex string                              */
@@ -325,7 +349,7 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat,
               *exp_dat = (llParams[1] & 0xFFFFFFFF); // lsb of bits 128-192
             else
               *exp_dat = 0; // lsb of bits 128-192
-            PRINTF("Expiration set %ld\n", *exp_dat);
+            PRINTF("Expiration set %d\n", (ui32)*exp_dat);
           }
 
           // Activation has limitation flag set
@@ -408,6 +432,178 @@ static int parse_json_result(const char* jsonResult, time_t* exp_dat,
 }
 
 /***********************************************************************/
+/* parse_authentication_json: Parse productReleaseHashDetails() result */
+/*                                                                     */
+/*      Inputs: param = the 256 bit integer hex string                 */
+/*                                                                     */
+/*     Returns: the unpacked ui64 bit value of the parameter           */
+/*                                                                     */
+/***********************************************************************/
+static int parse_authentication_json(const char *jsonResult,
+                    ui64 *entityId, ui64 *productId, ui64 *releaseId,
+                    ui64 *languages, ui64 *version, char *uri)
+{
+  size_t cnt = 0;
+  int ret = 0;
+
+  PRINTF("parse_activation_json()\n jsonResult-%s\n", jsonResult);
+
+  /*-------------------------------------------------------------------*/
+  /* see if json result has 0x hex string                              */
+  /*-------------------------------------------------------------------*/
+  if (strstr(jsonResult, "0x"))
+  {
+    char tmpstr[1024]/*3 * 64 + 5]*/, s_tmp[1024];//3 * 64 + 5];
+    const char* hexstring = strstr(jsonResult, "0x");
+    strcpy(tmpstr, hexstring);
+    strcpy(s_tmp, &(tmpstr[2]));
+    strcpy(tmpstr, s_tmp);
+    if (strchr(tmpstr, '"'))
+    {
+      strchr(tmpstr, '"')[0] = 0;
+    }
+
+    cnt = strlen(tmpstr);
+    if (cnt > 0)
+    {
+      int nParamsCount = (int)cnt / 16;//64;
+      PRINTF("nParamsCount = %d\n", nParamsCount);
+      if (nParamsCount >= 16)
+      {
+        ui64 llParams[16];
+        for (int i = 0; i < 16 /*nParamsCount*/; i++)
+        {
+          strncpy(s_tmp, &(tmpstr[i * 16/*64*/]), 16/*64*/);
+          s_tmp[16] = 0;
+          PRINTF("param[%d] - %s\n", i, s_tmp);
+          llParams[i] = unpack_64bit_value(s_tmp);
+        }
+
+        // If entity and product not found (each a 256 bit integer)
+        if ((llParams[3] == 0) && (llParams[7] == 0))
+        {
+          if (entityId)
+            *entityId = 0;
+          if (productId)
+            *productId = 0;
+          if (releaseId)
+            *releaseId = 0;
+          if (languages)
+            *languages = 0;
+          if (version)
+            *version = 0;
+          if (uri)
+            uri[0] = '\0';
+
+          PRINTF("No Authentication present\n");
+          puts("error no entity/product");
+          ret = blockchainNotFound;
+        }
+
+        // If the flags/expiration value is one or greater (valid), parse
+        else
+        {
+          // Assign the return values if pointers are valid
+          if (entityId)
+            *entityId = llParams[3];
+          if (productId)
+            *productId = llParams[7];
+          if (releaseId)
+            *releaseId = llParams[11];
+          if (languages)
+            *languages = llParams[14];
+          if (version)
+            *version = llParams[15];
+
+//          puts("authentication found");
+
+          // If URI present, copy it
+          if (uri && (cnt / 16 > 24))
+          {
+            char byte[3];
+//            printf("uri found, %d to %d\n", 16 * 24, (int)cnt);
+            tmpstr[cnt - 1] = '\0';
+/*            puts(&tmpstr[16 * 24]);
+            if (tmpstr[16 * 24] != '\0')
+              puts(&tmpstr[16 * 24]);
+            else
+              puts("URI empty");
+*/
+
+            for (int i = 16 * 24; i < cnt; i += 2)
+            {
+              byte[0] = tmpstr[i];
+              byte[1] = tmpstr[i + 1];
+              byte[2] = '\0';
+              uri[(i - (16 * 24)) / 2] = (char)strtol(byte, NULL, 16);
+              if ((byte[0] == 0) && (byte[1] == 0))
+                break;
+            }
+
+//            puts(uri);
+          }
+          ret = licenseValid;
+        }
+        /*
+        // Otherwise not found/valid
+        else
+        {
+          if (entityId)
+            *entityId = 0;
+          if (productId)
+            *productId = 0;
+          if (releaseId)
+            *releaseId = 0;
+          if (languages)
+            *languages = 0;
+          if (version)
+            *version = 0;
+          if (uri)
+            uri[0] = '\0';
+          ret = blockchainNotFound;
+        }
+        */
+      }
+      else
+      {
+        PRINTF("json params count not valid count = %d\n",
+          nParamsCount);
+        if (entityId)
+          *entityId = 0;
+        if (productId)
+          *productId = 0;
+        if (releaseId)
+          *releaseId = 0;
+        if (languages)
+          *languages = 0;
+        if (version)
+          *version = 0;
+        if (uri)
+          uri[0] = '\0';
+
+        puts("count mismatch");
+        ret = blockchainNotFound;
+        //        ret = blockchainAuthenticationFailed;
+      }
+    }
+    else
+    {
+      puts("params error");
+
+      PRINTF("json params not found returned 0x\n");
+      ret = blockchainAuthenticationFailed;
+    }
+  }
+  else
+  {
+    puts("params error2");
+    PRINTF("json params not found returned\n");
+    ret = blockchainAuthenticationFailed;
+  }
+  return ret;
+}
+
+/***********************************************************************/
 /* curl_write_memory_callback: write the HTTP response to memory       */
 /*                                                                     */
 /*    Inputs: contents = the buffer in                                 */
@@ -439,7 +635,7 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 }
 
 /***********************************************************************/
-/* autolm_read_activation: licenseStatus contract call, parse result   */
+/* autolm_read_authentication: licenseStatus contract call, parse result   */
 /*                                                                     */
 /*      Inputs: infuraId = the Infura ProductID to use                 */
 /*              jsonData = the encoded Json data for function call     */
@@ -449,7 +645,109 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 /*                                                                     */
 /***********************************************************************/
 static int autolm_read_activation(char* infuraId, char* jsonData,
-                  time_t* exp_dat, ui64* languages, ui64* version_plat)
+  time_t* exp_dat, ui64* languages, ui64* version_plat)
+{
+  int res;
+
+  // For reading an HTML response string into memory with curl
+  char curlResponseMemory[MAX_SIZE_JSON_RESPONSE];
+  curlResponseMemory[0] = 0; // start with empty string
+
+  // Initialize curl
+  curl_global_init(CURL_GLOBAL_ALL);
+
+  // Easy object to handle the connection.
+  CURL* easy = curl_easy_init();
+
+  /* send all data to this function  */
+  curl_easy_setopt(easy, CURLOPT_WRITEFUNCTION,
+    curl_write_memory_callback);
+
+  /* we pass our 'chunk' struct to the callback function */
+  curl_easy_setopt(easy, CURLOPT_WRITEDATA, (void*)curlResponseMemory);
+
+  // You can choose between 1L and 0L (enable verbose log or disable)
+#if AUTOLM_DEBUG
+  curl_easy_setopt(easy, CURLOPT_VERBOSE, 1L);
+#else
+  curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
+#endif
+  curl_easy_setopt(easy, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); //what ???
+
+  // Let's create an object which will contain a list of headers.
+  PRINTF("jsonData = %s\n", jsonData);
+  PRINTF("strlen (jsonData) = %d\n", (int)strlen(jsonData));
+
+#ifdef _WINDOWS
+#ifdef _OPENSSL
+  // Point curl to a root certificate store (file required)
+  curl_easy_setopt(easy, CURLOPT_CAINFO, "./cacert.pem");
+#endif
+#endif
+
+  /* Post json data */
+  curl_easy_setopt(easy, CURLOPT_POSTFIELDS, jsonData);
+  unsigned int jsonDataLength = (int)strlen(jsonData);
+  PRINTF("CURLOPT_POSTFIELDSIZE set to jsonDataLength = %d\n",
+    jsonDataLength);
+  /* set the size of the postfields data */
+  curl_easy_setopt(easy, CURLOPT_POSTFIELDSIZE, jsonDataLength);
+
+  struct curl_slist* head = NULL;
+
+  // Set the content type header to application/json
+  const char* headerContentType = "Content-type: application/json";
+  PRINTF("headerContentType = %s\n", headerContentType);
+  head = curl_slist_append(head, headerContentType);
+
+  // Add the headers to the easy object.
+  curl_easy_setopt(easy, CURLOPT_HTTPHEADER, head);
+
+  // Your URL.
+  const char* url;
+  url = CURL_HOST_URL; //  "http://localhost:8545/"
+  char urlBuf[128];
+  if (strcmp(url, ROPSTEN_INFURA_URL) == 0)
+    sprintf(urlBuf, "%s%s", url, infuraId);
+  else
+    sprintf(urlBuf, "%s", url);
+
+  PRINTF("URL = %s\n", urlBuf);
+  curl_easy_setopt(easy, CURLOPT_URL, urlBuf);
+
+  // Perform the HTTP request
+  if (curl_easy_perform(easy) == 0)
+  {
+    // Parse the result value and expiration date
+    res = parse_activation_json(curlResponseMemory, exp_dat, languages,
+      version_plat);
+  }
+  else
+  {
+    PRINTF("Error performing curl request");
+    res = curlPerformFailed;
+  }
+
+  // Destroy easy curl objects and return the result
+  curl_easy_cleanup(easy);
+  curl_global_cleanup();
+  return res;
+}
+
+/***********************************************************************/
+/* autolm_read_authentication: licenseStatus contract call, parse result   */
+/*                                                                     */
+/*      Inputs: infuraId = the Infura ProductID to use                 */
+/*              jsonData = the encoded Json data for function call     */
+/*      Output: exp_dat = the expiration date read from the blockchain */
+/*                                                                     */
+/*       Returns: the value of any license activation returned         */
+/*                                                                     */
+/***********************************************************************/
+ int autolm_read_authentication(const char *infuraId,
+    const char *jsonData, ui64 *entityId, ui64 * productId,
+    ui64 * releaseId, ui64 * languages, ui64 * version, char *uri)
 {
   int res;
 
@@ -477,8 +775,9 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
   curl_easy_setopt(easy, CURLOPT_VERBOSE, 0L);
 #endif
   curl_easy_setopt(easy, CURLOPT_HEADER, 1L);
-  curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); //what ???
-
+//  curl_easy_setopt(easy, CURLOPT_FOLLOWLOCATION, 1L); //what ???
+   //single call, disable keepalive
+  curl_easy_setopt(easy, CURLOPT_TCP_KEEPALIVE, 0L);
   // Let's create an object which will contain a list of headers.
   PRINTF("jsonData = %s\n", jsonData);
   PRINTF("strlen (jsonData) = %d\n", (int)strlen(jsonData));
@@ -524,8 +823,10 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
   if (curl_easy_perform(easy) == 0)
   {
     // Parse the result value and expiration date
-    res = parse_json_result(curlResponseMemory, exp_dat, languages,
-                            version_plat);
+    res = parse_authentication_json(curlResponseMemory,
+      entityId, productId, releaseId, languages, version, uri);
+//      parse_authentication_json(curlResponseMemory, exp_dat, languages,
+//                            version_plat);
   }
   else
   {
@@ -546,7 +847,9 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
 /*              productId = the product Id of the application          */
 /*              hashId = license activation hash identifier to check   */
 /*              infuraId = the Infura ProductId to use for access      */
-/*      Output: exp_date = the expiration date of the activation (or 0)*/
+/*     Outputs: exp_date = expiration date of the activation (or 0)    */
+/*              languages = language flags for the file                */
+/*              version_plat = version and platform flags              */
 /*                                                                     */
 /*     Returns: the value of any license activation returned           */
 /*                                                                     */
@@ -559,7 +862,7 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   char funcId[] = LICENSE_STATUS_ID;
 
   // Encode the function parameters as JSON paramters
-  encode_json_params(funcId, entityId, productId, hashId, jsonParams);
+  encode_activate_json(funcId, entityId, productId, hashId, jsonParams);
   PRINTF("%s\n", jsonParams);
 
   char jsonDataPrefixBuf[256];
@@ -593,6 +896,66 @@ int validate_onchain(ui64 entityId, ui64 productId, char* hashId,
   return autolm_read_activation(infuraId, jsonDataAll, exp_date,
                                 languages, version_plat);
 }
+
+/***********************************************************************/
+/* AutoLmAuthenticateFile: lookup file authenticity on blockchain      */
+/*                                                                     */
+/*      Inputs: hashId = the file SHA256 checksum/hash to lookup       */
+/*              infuraId = the Infura ProductId to use for access      */
+/*     Outputs: entityId = the Entity Id (creator id) of application   */
+/*              productId = the product Id of the application          */
+/*              releaseId = the product release index of file          */
+/*              languages = the 64 bit language flags of file          */
+/*              version = the version, 4 x 16 bits (X.X.X.X)           */
+/*              uri = the URI string pointing to the release file      */
+/*                                                                     */
+/*     Returns: the zero on success, negative on error                 */
+/*                                                                     */
+/***********************************************************************/
+int AutoLmAuthenticateFile(const char* hashId,
+  const char* infuraId, ui64* entityId, ui64* productId,
+  ui64* releaseId, ui64* languages, ui64* version, char* uri)
+{
+  char jsonParams[(4 * 64) + 10 + 1];// 4x 256 values + 10 functionId + 1
+  char funcId[] = PRODUCT_STATUS_ID;
+
+  // Encode the function parameters as JSON paramters
+  encode_authenticate_json(funcId, hashId, jsonParams);
+  PRINTF("%s\n", jsonParams);
+
+  char jsonDataPrefixBuf[256];
+  const char* jsonDataPrefix =
+    "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
+
+  // productReleaseHashDetails(uint256) is in ImmutableProduct contract
+  sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_PRODUCT_CONTRACT);
+  PRINTF("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
+  size_t nLengthPrefix = strlen(jsonDataPrefixBuf);
+
+  // Hard code the suffix
+  //   (TODO: make 8 a random id and check in response)
+  char jsonDataSuffix[] = "\"}, \"latest\"],\"id\": 8}";
+  PRINTF("jsonDataEndfix = %s\n", jsonDataSuffix);
+  size_t nLengthSuffix = strlen(jsonDataSuffix);
+
+  char jsonDataAll[2048];
+  strcpy(jsonDataAll, jsonDataPrefixBuf);
+
+  // Add the JSON encoded parameters to the buffer
+  size_t nLen = strlen(jsonDataAll);
+  size_t nLengthParams = strlen(jsonParams);
+  strcpy(&jsonDataAll[nLen], jsonParams);
+
+  // Add the data suffix, sanitize and call read_activation
+  nLen = strlen(jsonDataAll);
+  strcpy(&jsonDataAll[strlen(jsonDataAll)], jsonDataSuffix);
+  size_t nDataLength = nLengthPrefix + nLengthParams + nLengthSuffix;
+  jsonDataAll[nDataLength] = 0;
+  PRINTF("jsonData = %s\n", jsonDataAll);
+  return autolm_read_authentication(infuraId, jsonDataAll, entityId,
+    productId, releaseId, languages, version, uri);
+}
+
 #endif /* ifndef _CREATEONLY */
 
 #ifdef __cplusplus
@@ -1289,7 +1652,7 @@ int DECLARE(AutoLm) AutoLmPwdStringToBytes(const char* password,
   entityPwdLength = nPwdLength;
 
 #if AUTOLM_DEBUG
-  PRINTF("entityPassword - '%s', entityPwdLength = %ld\n", entityPassword,
+  PRINTF("entityPassword - '%s', entityPwdLength = %zd\n", entityPassword,
          entityPasswordLength);
   PRINTF("entityPassword - [");
 

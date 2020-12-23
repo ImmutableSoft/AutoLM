@@ -233,7 +233,7 @@ void DECLARE(md5) Md5Final(Md5Ctx *context,
 }
 
 /***********************************************************************/
-/* mbxMd5Transform: MD5 basic transformation of block                  */
+/* Md5Transform: MD5 basic transformation of block                     */
 /*                                                                     */
 /*      Inputs: state = MD5 state                                      */
 /*              block = input block                                    */
@@ -338,7 +338,7 @@ void DECLARE(md5) Md5Transform (UINT4 state[4],
 }
 
 /***********************************************************************/
-/* imtMd5Encode: MD5 encode a block                                    */
+/* Md5Encode: MD5 encode a block                                       */
 /*                                                                     */
 /*      Inputs: output = encode output                                 */
 /*              input = encode imput                                   */
