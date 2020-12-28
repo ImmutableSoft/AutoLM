@@ -23,6 +23,7 @@
     <ClCompile Include="base\md5.cpp" />
     <ClCompile Include="base\sha1.cpp" />
     <ClCompile Include="CompId.cpp" />
+    <ClCompile Include="EthereumCalls.cpp" />
     <ClCompile Include="Validate.cpp" />
   </ItemGroup>
   <ItemGroup>

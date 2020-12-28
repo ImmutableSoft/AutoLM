@@ -30,6 +30,9 @@
     <ClCompile Include="base\sha1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EthereumCalls.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autolm.h">

@@ -30,6 +30,9 @@
     <ClInclude Include="base\sha256.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EthereumCalls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AutoLM.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="base\sha256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EthereumCalls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

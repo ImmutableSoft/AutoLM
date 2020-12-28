@@ -40,6 +40,7 @@ LIBAUTO = \
 	base/sha1.o \
 	base/md5.o \
 	CompId.o \
+	EthereumCalls.o \
 	autolm.o
 
 COMPID = \
@@ -49,6 +50,7 @@ VALIDATE = \
 	base/sha1.o \
 	base/md5.o \
 	CompId.o \
+	EthereumCalls.o \
 	autolm.o
 
 TESTAPPLICATION = \

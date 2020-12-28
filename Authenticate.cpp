@@ -110,10 +110,10 @@ int main(int argc, const char **argv)
   ui64 entityId, productId, releaseId, languages, version;
   char uri[512];
 
-  res = AutoLmAuthenticateFile((const char *)buf, argv[2], &entityId, &productId,
-                               &releaseId, &languages, &version, uri);
+  res = EthereumAuthenticateFile((const char *)buf, argv[2], &entityId, &productId,
+                                 &releaseId, &languages, &version, uri);
 
-  // Output the resulting  if success
+  // Output the resulting file information if success
   if (res == 0)
   {
     puts("  File authentication found on blockchain");
@@ -133,31 +133,7 @@ int main(int argc, const char **argv)
   }
   else
     printf(" ERROR - Unverified %d!\n", res);
-  /*
-  if (res == 0)
-  {
-    time_t expireTime = 0;
-    char buyHashId[67] = "";
-    ui64 languages = 0, version_plat = 0;
-#if AUTOLM_DEBUG
-    if (argc == 10)
-      res = lm->AutoLmValidateLicense(argv[9], &expireTime, buyHashId, &languages, &version_plat);
-    else if ((argc == 9) && ((argv[8][0] == '0') && (argv[8][1] == 'x')))
-        res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &languages, &version_plat);
-    else
-#endif
-    if ((argc == 9) && ((argv[8][0] != '0') && (argv[8][1] != 'x')))
-      res = lm->AutoLmValidateLicense(argv[8], &expireTime, buyHashId, &languages, &version_plat);
-    else if (argc == 8)
-        res = lm->AutoLmValidateLicense("./license.elm", &expireTime, buyHashId, &languages, &version_plat);
-    PRINTF(" validated %d, expires on %lu\n", res, expireTime);
-    printf("%llu\n", languages);
-    printf("%llu\n", version_plat);
-    return (int)res;
-  }
 
-  // Otherwise, initialization failed, return zero
-  else
-*/
+  // Return the result of the file authentication lookup
   return res;
 }
