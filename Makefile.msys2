@@ -53,6 +53,14 @@ VALIDATE = \
 	EthereumCalls.o \
 	autolm.o
 
+AUTHENTICATE = \
+	base/sha1.o \
+	base/md5.o \
+	base/sha256.o \
+	CompId.o \
+	EthereumCalls.o \
+	autolm.o
+
 TESTAPPLICATION = \
 	./TestApplication/TestApplication.o
 
@@ -70,6 +78,7 @@ AUTOLIB = ./libautolm.so
 COMPIDEXE = ./CompId.exe
 ACTIVATEEXE = ./Activate.exe
 VALIDATEEXE = ./Validate.exe
+AUTHENTICATEEXE = ./Authenticate.exe
 TESTAPPLICATIONEXE = ./TestApplication/TestApplication.exe
 
 # Static build
@@ -97,7 +106,7 @@ LIBS = -lstdc++
 ##CFLAGS = $(CFLAGS) -ggdb
 ##		CPPFLAGS = $(CPPFLAGS) -ggdb
 
-all:		libauto compid validate testapplication activate
+all:		libauto compid validate testapplication activate authenticate
 
 # To create a static library change this below
 #	$(CPP) $(CPPFLAGS) -static \
@@ -119,6 +128,11 @@ compid: $(COMPID)
 validate: $(VALIDATE)
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(VALIDATEEXE) validate.cpp \
 	            $(VALIDATE) \
+                $(CURLLIB) $(LIBS)
+
+authenticate: $(AUTHENTICATE)
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(AUTHENTICATEEXE) authenticate.cpp \
+	            $(AUTHENTICATE) \
                 $(CURLLIB) $(LIBS)
 
 testapplication: $(TESTAPPLICATION)
@@ -144,6 +158,7 @@ clean:
 	$(RM) compid.exe
 	$(RM) activate.exe
 	$(RM) validate.exe
+	$(RM) authenticate.exe
 	$(RM) ./TestApplication/*.o
 	$(RM) ./TestApplication/TestApplication.exe
 

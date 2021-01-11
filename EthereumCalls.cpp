@@ -896,8 +896,8 @@ int EthereumValidateActivation(ui64 entityId, ui64 productId,
 /***********************************************************************/
 /* EthereumAuthenticateFile: lookup file authenticity on blockchain    */
 /*                                                                     */
-/*      Inputs: hashId = the file SHA256 checksum/hash to lookup       */
-/*              infuraId = the Infura ProductId to use for access      */
+/*      Inputs: hashId = file SHA256 checksum hex string to lookup     */
+/*              infuraId = Infura ProductId hex string used for access */
 /*     Outputs: entityId = the Entity Id (creator id) of application   */
 /*              productId = the product Id of the application          */
 /*              releaseId = the product release index of file          */

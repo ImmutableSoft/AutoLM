@@ -55,9 +55,10 @@ int main(int argc, const char **argv)
 {
   int res;
   FILE* pFILE;
-  char buffer[1024];
+  char buffer[1024], uri[512];
   size_t result;
   unsigned char digest[SHA256::DIGEST_SIZE];
+  ui64 entityId, productId, releaseId, languages, version;
   SHA256 ctx = SHA256();
 
   // Executable name, Filename, Infura Product ID
@@ -65,12 +66,12 @@ int main(int argc, const char **argv)
   {
     printf("Invalid number of arguments %d", argc);
     puts("");
-    puts("authenticate <entity id> <app id> <file name>");
+    puts("authenticate <file name> <infura id>");
     puts("");
     puts("  Authenticate a digital file with creator release.");
     puts("    Returns version of release on success.");
     puts("");
-    puts("  <file name> The file to verify authenticity of");
+    puts("  <file name> The path to a local file to verify on chain");
     puts("  <infura id> Your infura.io product id");
 
     return -1;
@@ -80,7 +81,7 @@ int main(int argc, const char **argv)
   memset(digest, 0, SHA256::DIGEST_SIZE);
 
   /*-------------------------------------------------------------------*/
-  /* First, open the file passed from the command line.                */
+  /* First, open the file in binary mode passed from command line .    */
   /*-------------------------------------------------------------------*/
   pFILE = fopen(argv[1], "rb");
   if (pFILE == NULL) { fputs("File error", stderr); exit(1); }
@@ -95,21 +96,21 @@ int main(int argc, const char **argv)
   // Finalize the SHA256 checksum
   ctx.Sha256Final(digest);
 
+  // Close the file as it is no longer needed
+  fclose(pFILE);
+
+  // The SHA256 checksum of the whole file is now complete
+
+  // Convert the checksum (digest) into a hex string
   char buf[2 * SHA256::DIGEST_SIZE + 1];
   buf[2 * SHA256::DIGEST_SIZE] = 0;
-  for (int i = 0; i < SHA256::DIGEST_SIZE; i++)
+  for (ui32 i = 0; i < SHA256::DIGEST_SIZE; i++)
     sprintf(&buf[i * 2], "%02x", digest[i]);
-
-  // the whole file is now loaded in the memory buffer.
-
-  fclose(pFILE);
 
   // If checksum complete (file exists, etc.), check blockchain
   printf("  File %s\n  SHA256 checksum: %s\n", argv[1], buf);
 
-  ui64 entityId, productId, releaseId, languages, version;
-  char uri[512];
-
+  // Lookup the file information from the SHA256 checksum
   res = EthereumAuthenticateFile((const char *)buf, argv[2], &entityId, &productId,
                                  &releaseId, &languages, &version, uri);
 
@@ -131,8 +132,19 @@ int main(int argc, const char **argv)
     else
       printf(" URI is empty\n");
   }
+
+  // Otherwise an error occurred so inform the user
   else
-    printf(" ERROR - Unverified %d!\n", res);
+  {
+    if (res == curlPerformFailed)
+      printf("ERROR - Curl HTTPS request failed.\n Is URL correct? Is OpenSSL used and Cacert.pem required/up to date?\n");
+    else if (res == blockchainNotFound)
+      printf("ERROR - Release not found for SHA256 checksum of this file");
+    else if (res == blockchainAuthenticationFailed)
+      printf("ERROR - Infura or HTTPS error. Is the Infura product id correct?");
+    else
+      printf(" ERROR - File unverified, error %d!\n", res);
+  }
 
   // Return the result of the file authentication lookup
   return res;

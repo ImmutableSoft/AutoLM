@@ -37,7 +37,7 @@
 #include "windows.h"
 
 // Configuration
-#define INFURA_PROJECT_ID "6233914717a744d19a2931dfbdd3dddc" // Change this!
+#define INFURA_PROJECT_ID "a2931dfbdd3dddc6233914717a744d19" // Change this!
 #define LICENSE_FILE      "./license.elm"
 
 static char BufValidate[100];

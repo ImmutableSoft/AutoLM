@@ -2,38 +2,32 @@
 
 # <img src="./images/AutoLm.png" alt="autolm" width="100" height="100"/> AutoLM Introduction
 
-## Welcoming the future of digital activation assets!
+## Welcoming the future of digital distribution assets!
 
-Software creators should be in control of sales
-details and be supremely compensated for their creations.
-End users of software should be in control of their
-purchased product activations and appreciate their
-payment goes directly to the creator of the products they
-purchase. [ImmutableSoft Inc.](https://immutablesoft.org/) furthers
-their goal of a future where software sales and distribution
-are open and decentralized with the introduction of the
-Automated License Manager, or AutoLM. Coupled with a
-decentralized and publicly audit-able resale ecosystem,
-digital product activations are transformed into digital
-assets of more inherent value, while increasing overall
-afford-ability and desirability.
+ImmutableSoft's goal is for all software creators to authenticate
+their digital product releases and directly offer for sale
+product activations for their digital creations. Purchasers of
+software are ensured of the authenticity and that their payment
+goes directly to the creator of the product they purchase.
 
-Together with a software creator presence on the
-[Immutable Ecosystem](https://ecosystem.immutablesoft.org),
-AutoLM empowers a software creators' application with
-sales distribution and automation, creating a valuable digital
-activation asset in exchange for crypto-currency directly from
-an end user. Leveraging the monetizable, decentralized and
-immutable Ethereum database, AutoLM and Immutable are able to
-automate sales and/or activation processes with a creator
-controlled license management configuration.
+The Automated License Manager, or AutoLM, is the embedded side
+of our decentralized software sales and distribution. This
+small C++ library and/or command line is used to automate
+life-cycle management for any software or digital creation.
+
+AutoLM connects your digital product with the smart contracts
+of the [Immutable Ecosystem](https://ecosystem.immutablesoft.org).
+Used together they secure supply chain and/or sales automation
+processes. A complete life-cycle management solution with
+automated processes.
 
 # AutoLM Overview
 
 AutoLM is an open source and commercial friendly (MIT license)
-example of a secure license activation library that is
-compatible with Immutable. The goals of AutoLM are to
-be easy to use while following security best practices.
+example of a secure software distribution and license activation
+library that is compatible with the Immutable Ecosystem. The goals
+of AutoLM are to be easy to use while following security best
+practices.
 
 AutoLM is built (see [INSTALL.md](./INSTALL.md)) as a
 C++ library to be linked together with the software or digital
@@ -42,21 +36,87 @@ programming language support, there is optionally a set of
 command line tools available for use.
 
 When integrated together with the digital
-product that is to be licensed, AutoLM will query the immutable
-Ethereum database and verify that a product license activation
-is in fact valid. The security of AutoLM works by utilizing a
-globally unique, read only PC/OS identifier and cryptographically
-tying it together with the unique entity and product information,
-including a secret password from the software creator. This
-one way cryptographic algorithm yields a unique activation identifier
-that is then used to identify if the installed software is 'valid'
-as a current digital activation asset, stored on the immutable
-Ethereum database.
+product that is to be distributed and/or sold, AutoLM will query
+the immutable Ethereum database (Immutable Ecosystem smart contracts)
+and verify that the end users digital download and/or purchased product
+license activation is in fact valid.
 
-AutoLM is designed to be integrated in one of two ways; standalone
-or server assisted. Standalone has the installed software
-application create the initial local license activation file.
-It is the simplest to deploy and is the basis for the
+To access the Ethereum database requires an Infura Product Id, available
+for free from [Infura.io](https://infura.io/). Each Entity of the Immutable
+Ecosystem should use their own Infura product Id to avoid
+exceeding the daily limit of uses (currently 100,000 activation
+checks per day is supported with a free Infura account).
+
+# Quick Use Guide for Product Release Authentication (Distribution)
+
+Digital product releases have the files' SHA256 checksum written to the
+Ethereum blockchain and signed by the registered creators' Ethereum wallet
+address key. An end user or application can easily verify a downloaded
+digital file release by a reverse lookup using the SHA256 checksum
+of the file. After downloading, the SHA256 hash of the file is used to
+look up the product release information. If the information matches
+the vendor, product and URI then the file is authentic.
+
+It is important that the user, or the installed software itself,
+verify that the lookup information is correct for the product
+they downloaded and intend to install. The resulting lookup information
+will include the product and owner (entity) along with the specific
+release id, supported languages, version and download URI.
+
+## Check File Authentication library libautolm
+
+Below is the comment header for the EthereumAuthenticateFile() function
+describing its usage. The SHA256 checksum hex string (of the file in
+question) and your InfuraId, are passed as inputs to query the blockchain.
+The entity, product and release Ids, languages and version flags, and URI
+are outputs of this function on success. If the function returns a negative
+value then an AutoLmResponse error occurred and the outputs are undefined
+and should be ignored.
+
+```cpp
+/***********************************************************************/
+/* EthereumAuthenticateFile: lookup file authenticity on blockchain    */
+/*                                                                     */
+/*      Inputs: hashId = the file SHA256 checksum/hash to lookup       */
+/*              infuraId = the Infura ProductId to use for access      */
+/*     Outputs: entityId = the Entity Id (creator id) of application   */
+/*              productId = the product Id of the application          */
+/*              releaseId = the product release index of file          */
+/*              languages = the 64 bit language flags of file          */
+/*              version = the version, 4 x 16 bits (X.X.X.X)           */
+/*              uri = the URI string pointing to the release file      */
+/*                                                                     */
+/*     Returns: the zero on success, negative on error                 */
+/*                                                                     */
+/***********************************************************************/
+int EthereumAuthenticateFile(const char* hashId,
+  const char* infuraId, ui64* entityId, ui64* productId,
+  ui64* releaseId, ui64* languages, ui64* version, char* uri)
+```
+
+See the Authenticate.cpp main() function to for a complete example that
+opens a file, reads the contents and performs the SHA256 checksum before
+checking the authentication of the file on the blockchain and displaying
+the file details to the user. This library and example can also be used
+to self authenticate an application such as a Win10 executable. Computing
+the SHA256 of the executable after loaded into memory, and verifying
+it with the blockchain ensures that the file is authentic before
+execution.
+
+# Quick Use Guide for License Activation Tokens (Purchases)
+
+AutoLM License Activation Tokens activate an instance of installed
+software on a particular hardware platform. Typically these tokens are
+exchanged on the blockchain for ETH or other cryptocurrency of value
+(stable coin, etc.) through a produce license offer on the Immutable
+Ecosystem but they can also be directly created by the registered
+digital creator for distribution to their customers.
+
+The library to check software activations is designed to be automated
+into a digital creators end user distribution flow in one of two ways;
+standalone or server assisted. Standalone has the installed
+software application create the initial local license activation
+file. It is the simplest to deploy and is the basis for the
 Quick Use Guide next. Server assisted moves the local license
 file creation process to a secure server the creator controls,
 through any server interface (JSON/REST interface, etc.). This
@@ -66,17 +126,26 @@ can be tied into an end user registration requirement on the
 software creators website, while still maintaining automation of
 the process.
 
-# Quick Use Guide
+## Check Activation License with library libautolm
 
-## Using libautolm, the C/C++ library
+The security of AutoLM license activations works by utilizing a
+globally unique, read only PC/OS identifier and cryptographically
+tying it together with the unique entity and product information,
+including a secret password from the software creator. This
+one way cryptographic algorithm yields a unique activation identifier
+that is then used to identify if the installed software is 'valid'
+as a current digital activation asset, stored on the immutable
+Ethereum database.
 
-The first step to using the AutoLM library is to initialize
-it with the entity and product information, as represented
-on the Immutable Ecosystem. If you have not created an Entity
-on Immutable you can test with one of the product examples on the
-Ropsten testnet (ie. leave code unchanged). With the entity and
-product reference from Immutable, call AutoLmInit() with a private
-mode and password to initialize the library.
+The first step to using AutoLM library for a activation license file
+check library is to initialize it with the entity and product
+information, as represented on the Immutable Ecosystem. If you have
+not created an Entity on Immutable you can test with one of the product
+examples on the Ropsten testnet (ie. leave code unchanged). With the
+entity and product reference from Immutable, call AutoLmInit() with a
+private mode and password to initialize the library. Remember, to access
+the Ethereum database requires a valid Infura Product Id, available for
+free from [Infura.io](https://infura.io/).
 
 ```cpp
 /***********************************************************************/
@@ -119,12 +188,7 @@ again.
 On the second call to AutoLmValidateLicense() the
 Ethereum database will be checked and if a new install the
 blockchainExpiredLicense error will be returned, indicating
-that this activation is not purchased or has expired. To access the
-Ethereum database requires an Infura Product Id, available for free
-from [Infura.io](https://infura.io/). Each Entity of the Immutable
-Ecosystem should use their own Infura product Id to avoid overuse
-and exceeding the daily limit of uses (currently 100,000 activation
-checks per day is supported with a free Infura account).
+that this activation is not purchased or has expired.
 
 ```cpp
 /***********************************************************************/
@@ -356,21 +420,62 @@ activation check.
 
 To aid testing, debugging and integration with scripting
 languages (Python, Perl, Tcl, etc.), the following command
-line tools are created when AutoLM is built; 'compid', 'activate'
-and 'validate'. The 'compid' outputs the computer id and
-is used by an application for troubleshooting or during
-server assist when a server call is required to 'activate'
+line tools are created when AutoLM is built; 'compid',
+'authenticate', 'activate' and 'validate'. The 'compid' outputs
+the computer id and is used by an application for troubleshooting
+or during server assist when a server call is required to 'activate'
 and the computer id must be passed from the PC executing the
 software to the server creating the license file.
+
+The 'authenticate' command computes a SHA256 checksum of a local
+file and looks up the product release with this checksum. The
+immutably recorded file details are returned in the response to
+this lookup if the file checksum is valid. The file details
+include entity (company/individual), product, version,
+languages and the official download URI.
 
 The 'activate' command creates a local license (file) using
 the detected OS/PC computer id and the application details
 (names, ids, mode, secret). The 'validate' call requires a previously
 created local license (file) and uses libcurl to validate the
-license both locally and on the Ethereum network. Validate returns
+license both locally and on the Ethereum network. 'Validate' returns
 a string representing the license activation value. Any number
 greater than zero is active, any number greater than one (1)
 is application specific (ie. an application feature or item).
+
+# Authenticate - Secure Authentication of Release File
+
+```bash
+$ ./authenticate
+Invalid number of arguments 1
+authenticate <file name> <infura id>
+
+  Authenticate a digital file with creator release.
+    Returns version of release on success.
+
+  <file name> The path to a local file to verify on chain
+  <infura id> Your infura.io product id
+
+$ ./authenticate ../../Downloads/Mibpeek-2020_2_2.exe d3dddc623391479a2931dfbd17a744d1
+  File ../../Downloads/Mibpeek-2020_2_2.exe
+  SHA256 checksum: dcde0b4b83b904d7e27ee7f501ae2a1faaecc6a78a7f41e0a756d2f82e002564
+  File authentication found on blockchain
+    Version 2020.2.2.0
+    Release #7 for entity 5 and product 0.
+    URI is https://www.asyn.io/download/mibpeek-2020_2_2.exe
+```
+
+As shown in the example above, the 'authenticate' command displays
+the version, release, entity and product id, as well as the official
+download URI link.
+
+```bash
+$ ./authenticate ../../Downloads/zadig-2.5.exe 6233914717a744d19a2931dfbdd3dddc
+  File ../../Downloads/zadig-2.5.exe
+  SHA256 checksum: 78a1a26854fbc848284588a62c7fbec9c652f6a3218ba543783d369265df00d6
+error no entity/product
+ERROR - Release not found for SHA256 checksum of this file
+```
 
 ## CompId - Globally Unique and Immutable Identifier
 
