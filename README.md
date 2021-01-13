@@ -94,7 +94,7 @@ int EthereumAuthenticateFile(const char* hashId,
   ui64* releaseId, ui64* languages, ui64* version, char* uri)
 ```
 
-See the Authenticate.cpp main() function to for a complete example that
+See the Authenticate.cpp main() function for a complete example that
 opens a file, reads the contents and performs the SHA256 checksum before
 checking the authentication of the file on the blockchain and displaying
 the file details to the user. This library and example can also be used
@@ -108,9 +108,10 @@ execution.
 AutoLM License Activation Tokens activate an instance of installed
 software on a particular hardware platform. Typically these tokens are
 exchanged on the blockchain for ETH or other cryptocurrency of value
-(stable coin, etc.) through a produce license offer on the Immutable
-Ecosystem but they can also be directly created by the registered
-digital creator for distribution to their customers.
+(stable coin, etc.) using a product license offer defined by the creator
+on the Immutable Ecosystem. License Activation Tokens can also be directly
+created by the registered digital creator for manual distribution to their
+customers.
 
 The library to check software activations is designed to be automated
 into a digital creators end user distribution flow in one of two ways;
@@ -137,8 +138,8 @@ that is then used to identify if the installed software is 'valid'
 as a current digital activation asset, stored on the immutable
 Ethereum database.
 
-The first step to using AutoLM library for a activation license file
-check library is to initialize it with the entity and product
+The first step to using AutoLM library for a license activation
+check is to initialize it with the entity and product
 information, as represented on the Immutable Ecosystem. If you have
 not created an Entity on Immutable you can test with one of the product
 examples on the Ropsten testnet (ie. leave code unchanged). With the
