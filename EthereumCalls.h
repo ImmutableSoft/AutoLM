@@ -65,7 +65,7 @@
 #define LOCAL_GANACHE_URL          "http://localhost:8545/"
 
 // Debugging options
-#define AUTOLM_DEBUG               1 // 1 to Enable debug output
+#define AUTOLM_DEBUG               0 // 1 to Enable debug output
 #if AUTOLM_DEBUG
 #define   PRINTF                   printf
 #else
