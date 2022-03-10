@@ -41,11 +41,19 @@ the immutable Ethereum database (Immutable Ecosystem smart contracts)
 and verify that the end users digital download and/or purchased product
 license activation is in fact valid.
 
-To access the Ethereum database requires an Infura Product Id, available
-for free from [Infura.io](https://infura.io/). Each Entity of the Immutable
-Ecosystem should use their own Infura product Id to avoid
-exceeding the daily limit of uses (currently 100,000 activation
-checks per day is supported with a free Infura account).
+To access the Ethereum database requires a web3 endpoint into the
+blockchain. The default is the public Polygon Mainnet endpoint
+(https://polygon-rpc.com/). Due to the public nature of this endpoint
+uptime is not guarenteed. It is recommended that an Infura Product Id,
+available for free from [Infura.io](https://infura.io/) is used. Each
+Entity of the Immutable Ecosystem is recommended to use their own Infura
+product Id to avoid unexpected outages with the blockchain endpoint your
+applications uses to query the blockchain for license validity. Currently
+100,000 activation checks per day is supported with a free Infura
+account. See
+[EthereumCalls.h](https://github.com/ImmutableSoft/AutoLM/blob/master/EthereumCalls.h)
+for details on changing the default to use Infura and your unique Infura
+ Product Id.
 
 # Quick Use Guide for Product Release Authentication (Distribution)
 
@@ -67,11 +75,11 @@ release id, supported languages, version and download URI.
 
 Below is the comment header for the EthereumAuthenticateFile() function
 describing its usage. The SHA256 checksum hex string (of the file in
-question) and your InfuraId, are passed as inputs to query the blockchain.
-The entity, product and release Ids, languages and version flags, and URI
-are outputs of this function on success. If the function returns a negative
-value then an AutoLmResponse error occurred and the outputs are undefined
-and should be ignored.
+question) and your InfuraId (if any) are passed as inputs to query the
+blockchain. The entity, product and release Ids, languages and version
+flags, and URI are outputs of this function on success. If the function
+returns a negative value then an AutoLmResponse error occurred and the
+outputs are undefined and should be ignored.
 
 ```cpp
 /***********************************************************************/
@@ -94,7 +102,9 @@ int EthereumAuthenticateFile(const char* hashId,
   ui64* releaseId, ui64* languages, ui64* version, char* uri)
 ```
 
-See the Authenticate.cpp main() function for a complete example that
+See the
+[Authenticate.cpp](https://github.com/ImmutableSoft/AutoLM/blob/master/Authenticate.cpp)
+main() function for a complete example that
 opens a file, reads the contents and performs the SHA256 checksum before
 checking the authentication of the file on the blockchain and displaying
 the file details to the user. This library and example can also be used
@@ -107,11 +117,11 @@ execution.
 
 AutoLM License Activation Tokens activate an instance of installed
 software on a particular hardware platform. Typically these tokens are
-exchanged on the blockchain for ETH or other cryptocurrency of value
-(stable coin, etc.) using a product license offer defined by the creator
-on the Immutable Ecosystem. License Activation Tokens can also be directly
-created by the registered digital creator for manual distribution to their
-customers.
+exchanged on the blockchain for Polygon MATIC or other cryptocurrency of
+value (stable coin, etc.) using a product license offer defined by the
+creator on the Immutable Ecosystem. License Activation Tokens can also
+be directly created by the registered digital creator for manual
+distribution to their customers.
 
 The library to check software activations is designed to be automated
 into a digital creators end user distribution flow in one of two ways;
@@ -129,24 +139,27 @@ the process.
 
 ## Check Activation License with library libautolm
 
-The security of AutoLM license activations works by utilizing a
+The security of AutoLM license activation NFTs works by utilizing a
 globally unique, read only PC/OS identifier and cryptographically
 tying it together with the unique entity and product information,
 including a secret password from the software creator. This
 one way cryptographic algorithm yields a unique activation identifier
 that is then used to identify if the installed software is 'valid'
-as a current digital activation asset, stored on the immutable
-Ethereum database.
+as a current digital activation asset, stored on an EVM compatible
+immutable database.
 
 The first step to using AutoLM library for a license activation
 check is to initialize it with the entity and product
-information, as represented on the Immutable Ecosystem. If you have
-not created an Entity on Immutable you can test with one of the product
-examples on the Ropsten testnet (ie. leave code unchanged). With the
+information, as represented on the Immutable Ecosystem. First create an
+Entity on Immutable on Polygon mainnet. Upon approval create your product
+and you can then create offers or direct NFT activations. With an
 entity and product reference from Immutable, call AutoLmInit() with a
-private mode and password to initialize the library. Remember, to access
-the Ethereum database requires a valid Infura Product Id, available for
-free from [Infura.io](https://infura.io/).
+private mode and password to initialize the library. For prototyping
+initial testing the public Polygon endpoint is best but for production
+please remember to use a valid Infura Product Id, available for
+free from [Infura.io](https://infura.io/), to ensure your product uptime.
+If the public Polygon endpoint goes down your application will not
+be able to validate the license.
 
 ```cpp
 /***********************************************************************/
@@ -187,7 +200,7 @@ again.
 ```
 
 On the second call to AutoLmValidateLicense() the
-Ethereum database will be checked and if a new install the
+EVM database will be checked and if a new install the
 blockchainExpiredLicense error will be returned, indicating
 that this activation is not purchased or has expired.
 
@@ -406,20 +419,17 @@ AutoLmValidateLicense().
 
 # Command Tools for Scripting Languages
 
-Due to the insecurity of passing parameters within
-a scripting language, and the fact that AutoLm requires
-a password as said parameter, scripting language applications of
-AutoLM should be limited to servers which the creator
-controls. Otherwise a keystore should be deployed (AWS, etc.)
-to store the password and this keystore be kept under control
-of the software creator. Alternatively, and only if supported
-by the scripting language, bytecode may be generated for the
-portion of the application that is to perform the license
-activation check.
+Since AutoLm requires a password as a parameter, scripting language applications of AutoLM should be limited to servers which the creator
+controls. This password however is not particularly important to
+security. The browser wallet (MetaMask) is the root of trust since
+only it can create activation NFTs (or offers for NFTs). If a keystore
+is available (AWS, etc.) it should be used to store the password but
+this is not required. The AutoLM password is only used to provide
+uniqueness to the resulting product activation identifier.
 
 ## Overview of Command Line Tools
 
-To aid testing, debugging and integration with scripting
+To aid testing, debugging and integration with clouds and scripting
 languages (Python, Perl, Tcl, etc.), the following command
 line tools are created when AutoLM is built; 'compid',
 'authenticate', 'activate' and 'validate'. The 'compid' outputs
@@ -439,9 +449,9 @@ The 'activate' command creates a local license (file) using
 the detected OS/PC computer id and the application details
 (names, ids, mode, secret). The 'validate' call requires a previously
 created local license (file) and uses libcurl to validate the
-license both locally and on the Ethereum network. 'Validate' returns
-a string representing the license activation value. Any number
-greater than zero is active, any number greater than one (1)
+license both locally and on the Polygon/Ethereum/EVM network.
+'Validate' returns a string representing the license activation value.
+Any number greater than zero is active, any number greater than one (1)
 is application specific (ie. an application feature or item).
 
 # Authenticate - Secure Authentication of Release File
@@ -525,7 +535,7 @@ application secret, product and computer id. However, this local
 activation still requires registration on the global blockchain
 before in can be considered valid. This blockchain activation
 step can require payment to the software creator through the
-transfer of crypto-currency (ETH), automating the sales process.
+transfer of crypto-currency (MATIC/ETH), automating the sales process.
 
 An example using the 'activate' command line tool to create a
 license activation file is below.
@@ -571,16 +581,18 @@ after purchase can this Value be changed.
 
 An example using the 'validate' command line tool to verify a
 license activation file with the Ethereum database is below. Note
-that the Infura Product Id (d3dddc6...1) is not a valid Infura Id.
-Please register you or your organization with [Infura](https://infura.io) to
-receive your own unique product identifier that should be used within your
-application for product validations.
+that the Infura Product Id is empty string as we are using the public
+Polygon web3 endpoint. This must be a valid Infura Id if
+[EthereumCalls.h](https://github.com/ImmutableSoft/AutoLM/blob/master/EthereumCalls.h)
+has CURL_HOST_URL set to POLYGON_INFURA_URL (or other INFURA_URL) you are
+registered with [Infura](https://infura.io) and received unique product
+identifier that should be used within your application for product validations.
 
 ```bash
 $ ./validate
 Invalid number of arguments 1
 validate <entity name> <entity id> <app name> <app id>
-         <mode> <password> <file name>
+         <mode> <password> <infura id> <file name>
 
   Validate a locate product activation license file
 
@@ -593,14 +605,17 @@ validate <entity name> <entity id> <app name> <app id>
   <infura id> the product ID from Infura.io
   [file name] Optional. Default is ./license.elm
 
-$ ./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd d3dddc623391479a2931dfbd17a744d1 ./license2.elm
+$ ./validate Mibtonix 3 Mibpeek 0 3 Passw\\0rd "" ./license2.elm
 1
 ```
 
-Note the value above returns one (1) indicating the license is valid. If
-the 'validate' command returns zero (0) then the activation is not
-valid on the Ethereum database indicating a purchase (or activation
-Move) from the Immutable Ecosystem is required.
+Note the value above returns one (1) indicating the license is valid.
+In practice any value greater than zero should have the value parsed
+and the details examined to determine the license credetials by the
+application (current/unexpired, valid platform, etc.). However, if the
+'validate' command returns zero (0) then the activation is not present
+on the EVM database indicating a purchase (or activation Move) from the
+Immutable Ecosystem is required to activate.
 
 # AutoLM Application Integration Notes
 

@@ -47,14 +47,41 @@ download, build and install it as described in the next section.
 
 ## To download and build libcurl
 
-AutoLM depends on curl as a submodule. Perform the commands below
-to clone (download) the latest curl code into your build tree.
+AutoLM depends on curl as a submodule. If your OS does not support
+libcurl development perform the commands below to clone (download) the
+latest curl code into your build tree.
 
 ```
 git submodule init
 git submodule update
 ```
 
+### Linux/MSYS2/MACOS
+
+To configure, make and install the default libcurl installation,
+use these commands in the curl directory (installed with
+git submodule update).
+
+
+```
+cd curl
+./configure --with-ssl
+make install
+```
+
+<b>Alternatively</b>, to configure, make and install <b>the minimum</b>
+libcurl installation that works with AutoLM, use these commands.
+
+```
+cd curl
+./configure --with-ssl --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp  --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-manual --without-brotli --without-zlib --disable-progress-meter  --disable-dnsshuffle
+make
+make install
+```
+
+This completes building and installing curl and libcurl for linking with
+AutoLM for Linux/MSYS2/MACOS applications. Unless also building libraries
+for Visual Studio applications you can skip the next section.
 
 ## Visual Studio 2019
 
@@ -108,29 +135,6 @@ nmake /f Makefile.vc mode=static VC=19 ENABLE_WINSSL=yes
 
 This will create the static libcurl_a.lib in the folder
 curl\builds\libcurl-vc19-x64-release-static-ipv6-sspi-winssl\lib
-
-### Linux
-
-To configure, make and install the default libcurl installation,
-use these commands in the curl directory (installed with
-git submodule update).
-
-
-```
-cd curl
-./configure --with-ssl
-make install
-```
-
-<b>Alternatively</b>, to configure, make and install the minimum
-libcurl installation that works with AutoLM, use these commands.
-
-```
-cd curl
-./configure --with-ssl --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy --disable-dict --disable-telnet --disable-tftp  --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-manual --without-brotli --without-zlib --disable-progress-meter  --disable-dnsshuffle
-make
-make install
-```
 
 # Building AutoLM
 
