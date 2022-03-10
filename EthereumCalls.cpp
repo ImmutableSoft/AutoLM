@@ -76,7 +76,7 @@ static void pack_hash_to_bytes(const char* hash, char* buf)
 
   // Fill the buffer from the end with the hash
   for (i = 0; i < length; i++)
-    bytes[(length - 1) - i] = hash[(length - 1) - i];
+    bytes[(64 - 1) - i] = hash[(length - 1) - i];
 }
 
 /***********************************************************************/
@@ -621,7 +621,7 @@ static size_t curl_write_memory_callback(void *contents, size_t size,
 }
 
 /***********************************************************************/
-/* autolm_read_activation: licenseStatus() contract call, parse result */
+/* autolm_read_activation: activateStatus() contract call, parse result*/
 /*                                                                     */
 /*      Inputs: infuraId = the Infura ProductID to use                 */
 /*              jsonData = the encoded Json data for function call     */
@@ -696,10 +696,10 @@ static int autolm_read_activation(char* infuraId, char* jsonData,
   const char* url;
   url = CURL_HOST_URL; //  "http://localhost:8545/"
   char urlBuf[128];
-  if (strcmp(url, ROPSTEN_INFURA_URL) == 0)
-    sprintf(urlBuf, "%s%s", url, infuraId);
-  else
+  if (strcmp(url, LOCAL_GANACHE_URL) == 0)
     sprintf(urlBuf, "%s", url);
+  else
+    sprintf(urlBuf, "%s%s", url, infuraId);
 
   PRINTF("URL = %s\n", urlBuf);
   curl_easy_setopt(easy, CURLOPT_URL, urlBuf);
@@ -855,7 +855,7 @@ int EthereumValidateActivation(ui64 entityId, ui64 productId,
       ui64 *version_plat)
 {
   char jsonParams[(4 * 64) + 10 + 1];// 4x 256 values + 10 functionId + 1
-  char funcId[] = LICENSE_STATUS_ID;
+  char funcId[] = ACTIVATE_STATUS_ID;
 
   // Encode the function parameters as JSON paramters
   encode_activate_json(funcId, entityId, productId, hashId, jsonParams);
@@ -865,7 +865,7 @@ int EthereumValidateActivation(ui64 entityId, ui64 productId,
   const char* jsonDataPrefix =
     "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
 
-  sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_LICENSE_CONTRACT);
+  sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_ACTIVATE_CONTRACT);
   PRINTF("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
   size_t nLengthPrefix = strlen(jsonDataPrefixBuf);
 
@@ -913,7 +913,7 @@ int EthereumAuthenticateFile(const char* hashId,
   ui64* releaseId, ui64* languages, ui64* version, char* uri)
 {
   char jsonParams[(4 * 64) + 10 + 1];// 4x 256 values + 10 functionId + 1
-  char funcId[] = PRODUCT_STATUS_ID;
+  char funcId[] = CREATOR_STATUS_ID;
 
   // Encode the function parameters as JSON paramters
   encode_authenticate_json(funcId, hashId, jsonParams);
@@ -924,7 +924,7 @@ int EthereumAuthenticateFile(const char* hashId,
     "{\"jsonrpc\":\"2.0\",\"method\": \"eth_call\", \"params\":[{\"to\": \"%s\", \"data\":\"";
 
   // productReleaseHashDetails(uint256) is in ImmutableProduct contract
-  sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_PRODUCT_CONTRACT);
+  sprintf(jsonDataPrefixBuf, jsonDataPrefix, IMMUTABLE_CREATOR_CONTRACT);
   PRINTF("jsonDataPrefixBuf = %s\n", jsonDataPrefixBuf);
   size_t nLengthPrefix = strlen(jsonDataPrefixBuf);
 
