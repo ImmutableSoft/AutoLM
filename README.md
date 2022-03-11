@@ -2,16 +2,17 @@
 
 # <img src="./images/AutoLm.png" alt="autolm" width="100" height="100"/> AutoLM Introduction
 
-## Welcoming the future of digital distribution assets!
+## Welcoming the future of digital distribution and asset management!
 
-ImmutableSoft's goal is for all software creators to authenticate
-their digital product releases and directly offer for sale
-product activations for their digital creations. Purchasers of
-software are ensured of the authenticity and that their payment
-goes directly to the creator of the product they purchase.
+ImmutableSoft's goal is for all technological creators to authenticate
+their digital products and directly offer for sale product activations
+for their digitally connected creations. Purchasers of
+connected products can prove authenticity of right to operation while
+ensuring their payments goes directly to the creator of
+the product.
 
 The Automated License Manager, or AutoLM, is the embedded side
-of our decentralized software sales and distribution. This
+of our decentralized digital product sales and distribution. This
 small C++ library and/or command line is used to automate
 life-cycle management for any software or digital creation.
 
@@ -19,7 +20,9 @@ AutoLM connects your digital product with the smart contracts
 of the [Immutable Ecosystem](https://ecosystem.immutablesoft.org).
 Used together they secure supply chain and/or sales automation
 processes. A complete life-cycle management solution with
-automated processes.
+automated processes. Embedding the AutoLM library into IoT devices is
+also supported so physical assets can authenticate their operation by
+reading from the decentralized blockchain.
 
 # AutoLM Overview
 
