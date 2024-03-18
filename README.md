@@ -56,7 +56,9 @@ applications uses to query the blockchain for license validity. Currently
 account. See
 [EthereumCalls.h](https://github.com/ImmutableSoft/AutoLM/blob/master/EthereumCalls.h)
 for details on changing the default to use Infura and your unique Infura
- Product Id.
+Product Id. More recently, other dedicated web3 providers have entered
+the market such as Alchemy and Moralis - they integrate similarly as
+Infura using their endpoint and identifier.
 
 # Quick Use Guide for Product Release Authentication (Distribution)
 
@@ -126,26 +128,25 @@ creator on the Immutable Ecosystem. License Activation Tokens can also
 be directly created by the registered digital creator for manual
 distribution to their customers.
 
-The library to check software activations is designed to be automated
-into a digital creators end user distribution flow in one of two ways;
-standalone or server assisted. Standalone has the installed
-software application create the initial local license activation
-file. It is the simplest to deploy and is the basis for the
+The library to check software activations can be automated
+into a digital creators end user distribution flow in any number of
+ways. Standalone or server control are common options. Standalone has
+the installed software application generate the initial local license
+activation file. It is the default and the basis for the
 Quick Use Guide next. Server assisted moves the local license
 file creation process to a secure server the creator controls,
 through any server interface (JSON/REST interface, etc.). This
-gives additional security as well as adding creator control to
-the local license file distribution process. This server interface
-can be tied into an end user registration requirement on the
-software creators website, while still maintaining automation of
-the process.
+is typically to integrate with cloud services and/or add more control
+over the license file distribution or onboard process. Tied into an
+end user registration requirement on the creators website it can still
+provide automation of sales and license distribution processes.
 
 ## Check Activation License with library libautolm
 
-The security of AutoLM license activation NFTs works by utilizing a
-globally unique, read only PC/OS identifier and cryptographically
-tying it together with the unique entity and product information,
-including a secret password from the software creator. This
+The security of AutoLM license activation NFTs works by utilizing the
+globally unique, read only PC/OS identifier of the user device and
+cryptographically tying it together with the unique entity and product
+information, including a secret password from the software creator. This
 one way cryptographic algorithm yields a unique activation identifier
 that is then used to identify if the installed software is 'valid'
 as a current digital activation asset, stored on an EVM compatible
@@ -154,12 +155,17 @@ immutable database.
 The first step to using AutoLM library for a license activation
 check is to initialize it with the entity and product
 information, as represented on the Immutable Ecosystem. First create an
-Entity on Immutable on Polygon mainnet. Upon approval create your product
-and you can then create offers or direct NFT activations. With an
-entity and product reference from Immutable, call AutoLmInit() with a
+Entity on Immutable on Polygon mainnet - [sign up for membership](https://www.immutablesoft.org/registration/)
+first and receive MATIC tokens to use for gas. Our account executives
+will schedule a demo to register your crypto wallet with our web3
+smart contract based [Immutable Marketplace](https://ecosystem.immutablesoft.org/)
+and approve your organization. Upon approval securely create your product
+with your wallet transactions after which you can create file releases,
+activation offers or direct NFT activations. With an entity and product
+reference from ImmutableSoft, call AutoLmInit() with a
 private mode and password to initialize the library. For prototyping
-initial testing the public Polygon endpoint is best but for production
-please remember to use a valid Infura Product Id, available for
+initial testing the public Polygon endpoint (default) is best but for
+production please remember to use a valid Infura Product Id, available for
 free from [Infura.io](https://infura.io/), to ensure your product uptime.
 If the public Polygon endpoint goes down your application will not
 be able to validate the license.
@@ -203,7 +209,7 @@ again.
 ```
 
 On the second call to AutoLmValidateLicense() the
-EVM database will be checked and if a new install the
+blockchain will be checked and if a new install the
 blockchainExpiredLicense error will be returned, indicating
 that this activation is not purchased or has expired.
 
@@ -223,17 +229,16 @@ that this activation is not purchased or has expired.
 
 At this point the application can choose to handle the situation
 however it pleases. At a minimum the application should display
-the activation identifier and a link to the Immutable Ecosystem.
-For a 'one-click' purchase experience provide an embedded
-link into the Immutable Ecosystem that will open the purchase
+the unique device/product activation identifier and a link to the
+Immutable Ecosystem. For a 'one-click' purchase experience provide an
+embedded link into the Immutable Ecosystem that will open the purchase
 activation page for that product with the end users activation
 identifier auto populated .
 
-To integrate AutoLM into other payment options besides Immutable
-there are two options, upgrade to EasyLM for a full license
-management suite (contact ImmutableSoft for more information) or
-have your sales process create activations within the Immutable
-Ecosystem on behalf of your customers when they purchase.
+To integrate AutoLM into other payment options besides ImmutableSoft,
+your sales process can create activations within the Immutable
+Ecosystem on behalf of your customers when they purchase - vendor
+created licenses.
 
 Below is the standalone example to launch the Immutable Ecosystem
 with a link to an auto populated page for a 'one-click' customer
